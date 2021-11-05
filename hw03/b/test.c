@@ -8,6 +8,23 @@ int energyConsumption ( int y1, int m1, int d1, int h1, int i1,
                         int y2, int m2, int d2, int h2, int i2, long long int * consumption )
 {
   /* todo */
+    if(y1 < 1600 || y2 < 1600)
+    return 0;
+  if(m1 < 1 || m1 > 12 || m2 < 1 || m2 > 12)
+    return 0;
+  if(d1 < 1 || d1 > 31 || d2 < 1 || d2 > 31)
+    return 0;
+  if(h1 < 0 || h1 > 23 || h2 < 0 || h2 > 23)
+    return 0;
+  if(i1 < 0 || i1 > 59 || i2 < 0 || i2 > 59)
+    return 0;
+
+  
+
+
+
+  
+
   return 1;
 }
 
