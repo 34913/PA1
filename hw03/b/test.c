@@ -4,6 +4,44 @@
 #include <assert.h>
 #endif /* __PROGTEST__ */
 
+// 1 - 10
+long DigitChange(int from, int to, int digitChange[]) {
+  long sum = 0;
+  from = from % 10;
+  to = to % 10;
+
+  for(int i = from; i <= to; i++) 
+    sum += digitChange[i];
+}
+
+// 1 - 60
+void Minutes(int from, int to, int digitChange[], long long int *consumption) {
+  if(from == to)
+    return;
+  
+  long sum = 0;
+
+  int fromOne = from / 10;
+  int fromTwo = from % 10;
+
+  int toOne = to / 10;
+  int toTwo = to % 10;
+
+  if(toOne - fromOne > 1) {
+    sum = DigitChange(1, 10, digitChange);
+    sum *= toOne - fromOne - 1;
+  }
+
+  if(fromOne == toOne)
+    sum += DigitChange(fromTwo + 1, toTwo + 1, digitChange);
+  else {
+    sum += DigitChange(fromTwo + 1, 10, digitChange);
+    sum += DigitChange(1, toTwo, digitChange);
+  }
+
+  *consumption = sum;
+}
+
 int energyConsumption ( int y1, int m1, int d1, int h1, int i1,
                         int y2, int m2, int d2, int h2, int i2, long long int * consumption )
 {
@@ -19,9 +57,18 @@ int energyConsumption ( int y1, int m1, int d1, int h1, int i1,
   if(i1 < 0 || i1 > 59 || i2 < 0 || i2 > 59)
     return 0;
 
+  long hours = 0;
+  long minutes = 0;
+
+  *consumption = 0;
+
+  int digit[10] = { 6, 2, 5, 5, 4, 5, 6, 3, 7, 6 };
+  int digitChange[10] = { 0, 4, 5, 2, 3, 3, 1, 4, 4, 1 };
+  int sum = 0;
+  for(int i = 0; i < 10; i++)
+    sum += digitChange[i];
+
   
-
-
 
   
 
