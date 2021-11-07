@@ -7,11 +7,12 @@
 // 1 - 10
 long DigitChange(int from, int to, int digitChange[]) {
   long sum = 0;
-  from = from % 10;
-  to = to % 10;
 
-  for(int i = from; i <= to; i++) 
+  for(int i = from % 10; i < to; i++) 
     sum += digitChange[i];
+
+  printf("%ld\n", sum);
+  return sum;
 }
 
 // 1 - 60
@@ -28,8 +29,10 @@ void Minutes(int from, int to, int digitChange[], long long int *consumption) {
   int toTwo = to % 10;
 
   if(toOne - fromOne > 1) {
-    sum = DigitChange(1, 10, digitChange);
-    sum *= toOne - fromOne - 1;
+    sum += DigitChange(fromOne + 1, toOne, digitChange);
+    sum += DigitChange(1, 10, digitChange) * (toOne - fromOne - 1);
+
+    printf("%ld %ld\n", toOne - fromOne - 1, sum);
   }
 
   if(fromOne == toOne)
@@ -38,15 +41,43 @@ void Minutes(int from, int to, int digitChange[], long long int *consumption) {
     sum += DigitChange(fromTwo + 1, 10, digitChange);
     sum += DigitChange(1, toTwo, digitChange);
   }
+  
+  *consumption = sum;
+}
 
+void Hours(int from, int to, int digitChange[], long long int *consumption) {
+  if(from == to)
+    return;
+  
+  long sum = 0;
+
+  int fromOne = from / 10;
+  int fromTwo = from % 10;
+
+  int toOne = to / 10;
+  int toTwo = to % 10;
+
+  if(toOne - fromOne > 1) {
+    sum += DigitChange(fromOne + 1, toOne, digitChange);
+    sum += DigitChange(1, 10, digitChange) * (toOne - fromOne - 1);
+
+    printf("%ld %ld\n", toOne - fromOne - 1, sum);
+  }
+
+  if(fromOne == toOne)
+    sum += DigitChange(fromTwo + 1, toTwo + 1, digitChange);
+  else {
+    sum += DigitChange(fromTwo + 1, 10, digitChange);
+    sum += DigitChange(1, toTwo, digitChange);
+  }
+  
   *consumption = sum;
 }
 
 int energyConsumption ( int y1, int m1, int d1, int h1, int i1,
                         int y2, int m2, int d2, int h2, int i2, long long int * consumption )
 {
-  /* todo */
-    if(y1 < 1600 || y2 < 1600)
+  if(y1 < 1600 || y2 < 1600)
     return 0;
   if(m1 < 1 || m1 > 12 || m2 < 1 || m2 > 12)
     return 0;
@@ -63,14 +94,15 @@ int energyConsumption ( int y1, int m1, int d1, int h1, int i1,
   *consumption = 0;
 
   int digit[10] = { 6, 2, 5, 5, 4, 5, 6, 3, 7, 6 };
-  int digitChange[10] = { 0, 4, 5, 2, 3, 3, 1, 4, 4, 1 };
+  int digitChange[10] = { 2, 4, 5, 2, 3, 3, 1, 4, 4, 1 };
   int sum = 0;
   for(int i = 0; i < 10; i++)
     sum += digitChange[i];
 
+  Minutes(i1, i2, digitChange, consumption);
   
 
-  
+  printf("%lld\n", *consumption);
 
   return 1;
 }
