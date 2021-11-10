@@ -5,6 +5,16 @@
 #include <stdbool.h>
 #endif /* __PROGTEST__ */
 
+// decides if year is leap
+bool IsLeap(int year) {
+  if(year % 4 == 0 || year % 400 == 0) {
+      if(year % 100 != 0 && year % 4000 != 0) {
+        return true;
+      }
+  }
+  return false;
+}
+
 int energyConsumption ( int y1, int m1, int d1, int h1, int i1,
                         int y2, int m2, int d2, int h2, int i2, long long int * consumption )
 {
