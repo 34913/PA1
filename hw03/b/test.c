@@ -36,6 +36,19 @@ int energyConsumption ( int y1, int m1, int d1, int h1, int i1,
   if(( IsLeap( y1 ) && m1 == 2 && d1 > 29 ) || ( IsLeap( y2 ) && m2 == 2 && d2 > 29 ))
     return 0;
 
+  int digitChange[10] = { 2, 4, 5, 2, 3, 3, 1, 4, 4, 1 };
+  int allTen = 0;
+  for(int i = 0; i < 10; i++)
+    allTen += digitChange[i];
+
+  long long int sum = 0;
+  long long int hours = 0;
+  long long int minutes = 0;
+  char months[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+
+  
+
+
 
   return 1;
 }
