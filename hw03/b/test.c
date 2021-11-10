@@ -41,12 +41,62 @@ int energyConsumption ( int y1, int m1, int d1, int h1, int i1,
   for(int i = 0; i < 10; i++)
     allTen += digitChange[i];
 
-  long long int sum = 0;
+  long long int days = 0;
   long long int hours = 0;
   long long int minutes = 0;
   char months[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
-  
+// years
+
+  if( y1 > y2 ) {
+    return 0;
+  }
+  else if( y2 > y1 + 1 ) {
+    for ( int i = y1 + 1; i < y2; i++ ) {
+      if( IsLeap( i ) )
+        days += 365 + 1;
+      else
+        days += 365;
+    }
+  }
+
+// months
+
+  if( y1 == y2 ) {
+    if( m1 > m2 )
+      return 0;
+    else {
+      if( m1 + 1 <= 2 && 2 < m2 ) {
+        if( IsLeap( y1 ) )
+          days += 1;
+      }
+      for( int i = m1 + 1; i <= m2; i++ )
+        days += months[i - 1];
+    }
+  }
+  else { 
+    for( int i = m1 + 1; i <= 12; i++ )
+      days += months[i - 1];
+    for( int i = 1; i < m2; i++ )
+      days += months[i - 1];
+  }
+
+// days
+
+  if( m1 == m2 ) {
+    if( d1 > d2 && y1 == y2 )
+      return 0;
+    else {
+      for( int i = d1 + 1; i <= d2; i++ ) 
+        days += 1;
+    }
+  }
+  else {
+    for( int i = d1 + 1; i <= months[m1 - 1]; i++ )
+      days += 1;
+    for( int i = 1; i <= d2; i++ )
+      days += 1;
+  }
 
 
 
