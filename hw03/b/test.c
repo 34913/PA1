@@ -44,7 +44,13 @@ int energyConsumption ( int y1, int m1, int d1, int h1, int i1,
   long long int days = 0;
   long long int hours = 0;
   long long int minutes = 0;
+
+  long long int sum = 0;
   char months[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+
+  int twoZero = 3;
+  int threeZero = 3;
+  int fiveZero = 3;
 
 // years
 
@@ -99,6 +105,116 @@ int energyConsumption ( int y1, int m1, int d1, int h1, int i1,
   }
 
 
+// hours
+
+  if( d1 == d2 ) {
+    if( h1 > h2 && m1 == m2 && y1 == y2 )
+      return 0;
+    else if( h1 != h2 ) {
+      if( h1 / 10 == h2 / 10 ) {
+        for( int i = h1 % 10; i < h2 % 10; i++ ) 
+          sum += digitChange[ i + 1 ];
+      }
+      else {
+        for( int i = h1 % 10; i < 9; i++ )
+          sum += digitChange[ i + 1 ];
+        for( int i = h1 / 10 + 1; i < h2 / 10; i++)
+          sum += allTen + digitChange[ i + 1 ];
+        for( int i = 0; i <= h2 % 10; i++ )
+          sum += digitChange[ i + 1 ];
+
+        sum += digitChange[ h1 / 10 + 1 ];
+      }
+      hours = h2 - h1 - 1;
+    }
+  }
+  else {
+    if( h1 >= 20 ) {
+      for( int i = h1 % 10; i < 4; i++ )
+        sum += digitChange[ i + 1 ];
+    }
+    else {
+      if( h1 < 10 ) {
+        sum += allTen;
+        sum += digitChange[1];
+      }
+
+      for( int i = h1 % 10; i < 9; i++)
+        sum += digitChange[ i + 1 ];
+      for( int i = 0; i < 3; i++)
+        sum += digitChange[ i + 1 ];
+      sum += digitChange[2] + digitChange[0];
+    }
+
+    if( h2 >= 20 ) {
+      sum += allTen * 2;
+      for( int i = 0; i < h2 % 10; i++ )
+        sum += digitChange[ i + 1 ];
+      sum += digitChange[1] + digitChange[2];
+    }
+    else {
+      if( h2 > 10 ) {
+        sum += allTen;
+        sum += digitChange[1];
+      }
+
+      for( int i = 0; i < h2 % 10; i++ )
+        sum += digitChange[ i + 1 ];
+    }
+
+    sum += twoZero + threeZero;
+
+    hours = 23 - h1 + h2;
+  }
+
+// minutes
+
+  if( h1 == h2 ) {
+    if( i1 > i2 && d1 == d2 && m1 == m2 && y1 == y2 )
+      return 0;
+    else if( i1 != i2 ) {
+      if( i1 / 10 == i2 / 10 ) {
+        for( int i = i1 % 10; i < i2 % 10; i++ ) 
+          sum += digitChange[ i + 1 ];
+      }
+      else {
+        for( int i = i1 % 10; i < 9; i++ )
+          sum += digitChange[ i + 1 ];
+        for( int i = i1 / 10 + 1; i < i2 / 10; i++)
+          sum += allTen + digitChange[ i + 1 ];
+         for( int i = 0; i <= i2 % 10; i++ )
+          sum += digitChange[i];
+
+        sum += digitChange[ i1 / 10 + 1 ];
+      }
+
+      minutes = i2 - i1;
+    }
+    
+  }
+  else {
+
+    for( int i = i1 / 10 + 1; i < 6; i++ )
+      sum += allTen + digitChange[i];
+    for( int i = i1 % 10; i < 9; i++ )
+      sum += digitChange[i + 1];
+    for( int i = 0; i < i2 / 10; i++ )
+      sum += allTen + digitChange[i + 1];
+    for( int i = 0; i < i2 % 10; i++ )
+      sum += digitChange[i + 1];
+
+    sum += fiveZero + digitChange[0];
+
+    minutes = 60 - i1 + i2;
+  }
+
+// the rest
+
+  sum += days * 292886; // const for whole days
+  sum += minutes * 200; // const for whole minutes
+  sum += hours * 12200; // cosnt for whole hours
+
+  *consumption = sum;
 
   return 1;
 }
