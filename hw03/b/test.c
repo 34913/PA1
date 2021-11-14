@@ -5,13 +5,17 @@
 #include <stdbool.h>
 #endif /* __PROGTEST__ */
 
+
 // decides if year is leap
-bool IsLeap(int year) {
-  if(year % 4 == 0 || year % 400 == 0) {
-      if(year % 100 != 0 && year % 4000 != 0) {
-        return true;
-      }
-  }
+bool IsLeap( int year ) {
+  if( year % 4000 == 0)
+    return false;
+  if( year % 400 == 0 )
+    return true;
+  if( year % 100 == 0 )
+    return false;
+  if( year % 4 == 0 )
+    return true;
   return false;
 }
 
@@ -30,15 +34,27 @@ int energyConsumption ( int y1, int m1, int d1, int h1, int i1,
     return 0;
   if(i1 < 0 || i1 > 59 || i2 < 0 || i2 > 59)
     return 0;
-  if((m1 == 2 && d1 > 29) || (m2 == 2 || d2 > 29))
+
+  if( IsLeap( y1 ) ) {
+    if( m1 == 2 && d1 > 29 )
+      return 0;
+  }
+  else if( m1 == 2 && d1 > 28 )
     return 0;
 
-  if(( IsLeap( y1 ) && m1 == 2 && d1 > 29 ) || ( IsLeap( y2 ) && m2 == 2 && d2 > 29 ))
+  if( IsLeap( y2 ) ) {
+    if( m2 == 2 && d2 > 29 )
+      return 0;
+  }
+  else if( m2 == 2 && d2 > 28 )
     return 0;
 
-  int digitChange[10] = { 2, 4, 5, 2, 3, 3, 1, 4, 4, 1 };
+  if( y1 == y2 && m1 == m2 && d1 == d2 && h1 == h2 && i1 == i2 )
+    return 1;
+
+  int digitChange[ 10 ] = { 2, 4, 5, 2, 3, 3, 1, 5, 4, 1 };
   int allTen = 0;
-  for(int i = 0; i < 10; i++)
+  for( int i = 0; i < 10; i++ )
     allTen += digitChange[i];
 
   long long int days = 0;
@@ -76,7 +92,7 @@ int energyConsumption ( int y1, int m1, int d1, int h1, int i1,
         if( IsLeap( y1 ) )
           days += 1;
       }
-      for( int i = m1 + 1; i <= m2; i++ )
+      for( int i = m1 + 1; i < m2; i++ )
         days += months[i - 1];
     }
   }
@@ -86,24 +102,23 @@ int energyConsumption ( int y1, int m1, int d1, int h1, int i1,
     for( int i = 1; i < m2; i++ )
       days += months[i - 1];
   }
-
+  
 // days
 
   if( m1 == m2 ) {
     if( d1 > d2 && y1 == y2 )
       return 0;
     else {
-      for( int i = d1 + 1; i <= d2; i++ ) 
+      for( int i = d1 + 1; i < d2; i++ ) 
         days += 1;
     }
   }
   else {
-    for( int i = d1 + 1; i <= months[m1 - 1]; i++ )
+    for( int i = d1 + 1; i < months[m1 - 1]; i++ )
       days += 1;
     for( int i = 1; i <= d2; i++ )
       days += 1;
   }
-
 
 // hours
 
@@ -213,6 +228,8 @@ int energyConsumption ( int y1, int m1, int d1, int h1, int i1,
   sum += days * 292886; // const for whole days
   sum += minutes * 200; // const for whole minutes
   sum += hours * 12200; // cosnt for whole hours
+
+//  printf("%lld\n%lld %lld\n%lld\n\n", days, hours, minutes, sum);
 
   *consumption = sum;
 
