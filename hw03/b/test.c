@@ -22,6 +22,9 @@ bool IsLeap( int year ) {
 int energyConsumption ( int y1, int m1, int d1, int h1, int i1,
                         int y2, int m2, int d2, int h2, int i2, long long int * consumption )
 {
+  if( consumption == NULL )
+    return 0;
+
   *consumption = 0;
 
   if(y1 < 1600 || y2 < 1600)
@@ -52,8 +55,8 @@ int energyConsumption ( int y1, int m1, int d1, int h1, int i1,
   if( y1 == y2 && m1 == m2 && d1 == d2 && h1 == h2 && i1 == i2 )
     return 1;
 
-  int digitChange[ 10 ] = { 2, 4, 5, 2, 3, 3, 1, 5, 4, 1 };
-  int allTen = 0;
+  char digitChange[ 10 ] = { 2, 4, 5, 2, 3, 3, 1, 5, 4, 1 };
+  char allTen = 0;
   for( int i = 0; i < 10; i++ )
     allTen += digitChange[i];
 
@@ -70,15 +73,13 @@ int energyConsumption ( int y1, int m1, int d1, int h1, int i1,
 
 // years
 
-  if( y1 > y2 ) {
+  if( y1 > y2 )
     return 0;
-  }
-  else if( y2 > y1 + 1 ) {
+  else {
     for ( int i = y1 + 1; i < y2; i++ ) {
+      days += 365;
       if( IsLeap( i ) )
-        days += 365 + 1;
-      else
-        days += 365;
+        days++;
     }
   }
 
@@ -88,10 +89,8 @@ int energyConsumption ( int y1, int m1, int d1, int h1, int i1,
     if( m1 > m2 )
       return 0;
     else {
-      if( m1 + 1 <= 2 && 2 < m2 ) {
-        if( IsLeap( y1 ) )
-          days += 1;
-      }
+      if( m1 + 1 <= 2 && 2 < m2 && IsLeap( y1 ) )
+        days ++;
       for( int i = m1 + 1; i < m2; i++ )
         days += months[i - 1];
     }
@@ -101,12 +100,17 @@ int energyConsumption ( int y1, int m1, int d1, int h1, int i1,
       days += months[i - 1];
     for( int i = 1; i < m2; i++ )
       days += months[i - 1];
+
+    if( m1 + 1 <= 2 && IsLeap( y1 ) )
+        days ++;
+    if( 2 < m2 && IsLeap( y2 ) )
+        days ++;
   }
   
 // days
 
-  if( m1 == m2 ) {
-    if( d1 > d2 && y1 == y2 )
+  if( m1 == m2 && y1 == y2 ) {
+    if( d1 > d2 )
       return 0;
     else {
       for( int i = d1 + 1; i < d2; i++ ) 
@@ -114,16 +118,18 @@ int energyConsumption ( int y1, int m1, int d1, int h1, int i1,
     }
   }
   else {
+    if( IsLeap( y1 ) && m1 == 2 )
+      days ++;
     for( int i = d1 + 1; i < months[m1 - 1]; i++ )
-      days += 1;
+      days ++;
     for( int i = 1; i <= d2; i++ )
-      days += 1;
+      days ++;
   }
 
 // hours
 
-  if( d1 == d2 ) {
-    if( h1 > h2 && m1 == m2 && y1 == y2 )
+  if( d1 == d2 && m1 == m2 && y1 == y2 ) {
+    if( h1 > h2 )
       return 0;
     else if( h1 != h2 ) {
       if( h1 / 10 == h2 / 10 ) {
@@ -131,12 +137,12 @@ int energyConsumption ( int y1, int m1, int d1, int h1, int i1,
           sum += digitChange[ i + 1 ];
       }
       else {
-        for( int i = h1 % 10; i < 9; i++ )
-          sum += digitChange[ i + 1 ];
+        for( int i = h1 % 10 + 1; i <= 9; i++ )
+          sum += digitChange[ i ];
         for( int i = h1 / 10 + 1; i < h2 / 10; i++)
           sum += allTen + digitChange[ i + 1 ];
         for( int i = 0; i <= h2 % 10; i++ )
-          sum += digitChange[ i + 1 ];
+          sum += digitChange[ i ];
 
         sum += digitChange[ h1 / 10 + 1 ];
       }
@@ -145,8 +151,8 @@ int energyConsumption ( int y1, int m1, int d1, int h1, int i1,
   }
   else {
     if( h1 >= 20 ) {
-      for( int i = h1 % 10; i < 4; i++ )
-        sum += digitChange[ i + 1 ];
+      for( int i = h1 % 10 + 1; i <= 3; i++ )
+        sum += digitChange[ i ];
     }
     else {
       if( h1 < 10 ) {
@@ -154,28 +160,17 @@ int energyConsumption ( int y1, int m1, int d1, int h1, int i1,
         sum += digitChange[1];
       }
 
-      for( int i = h1 % 10; i < 9; i++)
-        sum += digitChange[ i + 1 ];
-      for( int i = 0; i < 3; i++)
-        sum += digitChange[ i + 1 ];
-      sum += digitChange[2] + digitChange[0];
+      for( int i = h1 % 10 + 1; i <= 9; i++)
+        sum += digitChange[ i ];
+      for( int i = 0; i <= 3; i++)
+        sum += digitChange[ i ];
+      sum += digitChange[2];
     }
 
-    if( h2 >= 20 ) {
-      sum += allTen * 2;
-      for( int i = 0; i < h2 % 10; i++ )
-        sum += digitChange[ i + 1 ];
-      sum += digitChange[1] + digitChange[2];
-    }
-    else {
-      if( h2 > 10 ) {
-        sum += allTen;
-        sum += digitChange[1];
-      }
-
-      for( int i = 0; i < h2 % 10; i++ )
-        sum += digitChange[ i + 1 ];
-    }
+    for( int i = 1; i <= h2 / 10; i++ )
+        sum += allTen + digitChange[ i ];
+    for( int i = 1; i <= h2 % 10; i++ )
+      sum += digitChange[ i ];
 
     sum += twoZero + threeZero;
 
@@ -184,43 +179,43 @@ int energyConsumption ( int y1, int m1, int d1, int h1, int i1,
 
 // minutes
 
-  if( h1 == h2 ) {
-    if( i1 > i2 && d1 == d2 && m1 == m2 && y1 == y2 )
+  if( h1 == h2 && d1 == d2 && m1 == m2 && y1 == y2 ) {
+    if( i1 > i2 )
       return 0;
     else if( i1 != i2 ) {
       if( i1 / 10 == i2 / 10 ) {
-        for( int i = i1 % 10; i < i2 % 10; i++ ) 
-          sum += digitChange[ i + 1 ];
+        for( int i = i1 % 10 + 1; i <= i2 % 10; i++ )
+          sum += digitChange[ i ];
       }
       else {
-        for( int i = i1 % 10; i < 9; i++ )
-          sum += digitChange[ i + 1 ];
-        for( int i = i1 / 10 + 1; i < i2 / 10; i++)
-          sum += allTen + digitChange[ i + 1 ];
+        for( int i = i1 % 10 + 1; i <= 9; i++ )
+          sum += digitChange[ i ];
+        for( int i = i1 / 10 + 2; i <= i2 / 10; i++)
+          sum += allTen + digitChange[ i ];
          for( int i = 0; i <= i2 % 10; i++ )
-          sum += digitChange[i];
+          sum += digitChange[ i ];
 
         sum += digitChange[ i1 / 10 + 1 ];
       }
 
       minutes = i2 - i1;
     }
-    
   }
   else {
 
-    for( int i = i1 / 10 + 1; i < 6; i++ )
-      sum += allTen + digitChange[i];
-    for( int i = i1 % 10; i < 9; i++ )
-      sum += digitChange[i + 1];
-    for( int i = 0; i < i2 / 10; i++ )
-      sum += allTen + digitChange[i + 1];
-    for( int i = 0; i < i2 % 10; i++ )
-      sum += digitChange[i + 1];
+    for( int i = i1 / 10 + 1; i <= 5; i++ )
+      sum += allTen + digitChange[ i ];
+    for( int i = i1 % 10 + 1; i <= 9; i++ )
+      sum += digitChange[ i ];
+    for( int i = 1; i <= i2 / 10; i++ )
+      sum += allTen + digitChange[ i ];
+    for( int i = 0; i <= i2 % 10; i++ )
+      sum += digitChange[ i ];
 
-    sum += fiveZero + digitChange[0];
+    sum += fiveZero;
 
     minutes = 60 - i1 + i2;
+
   }
 
 // the rest
@@ -229,7 +224,7 @@ int energyConsumption ( int y1, int m1, int d1, int h1, int i1,
   sum += minutes * 200; // const for whole minutes
   sum += hours * 12200; // cosnt for whole hours
 
-//  printf("%lld\n%lld %lld\n%lld\n\n", days, hours, minutes, sum);
+  //printf("%lld\n%lld %lld\n%lld\n\n", days, hours, minutes, sum);
 
   *consumption = sum;
 
@@ -279,6 +274,7 @@ int main ( int argc, char * argv [] )
   assert ( energyConsumption ( 2400,  2, 29, 12,  0,
                                2400,  2, 29, 12,  0, &consumption ) == 1
            && consumption == 0LL );
+
   return 0;
 }
 #endif /* __PROGTEST__ */
