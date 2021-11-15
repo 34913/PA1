@@ -5,10 +5,10 @@
 
 //
 
-bool CheckInput( int returnVal, int wantedVal );
-void ErrorMsg( void );
-void AddUser( int id, int *database );
-void CalculateUsers( int from, int to, int *database );
+bool CheckInput     ( int returnVal, int wantedVal );
+void ErrorMsg       ( void );
+int  AddUser        ( int id, database *db );
+int  CalculateUsers ( int from, int to, database *db );
 
 //
 
@@ -19,6 +19,12 @@ enum keysEnum
     defKey = ' ',
 };
 
+typedef struct 
+{
+    int *data;
+    int len;
+} database;
+
 //
 
 int main ( int argc, char * argv [] )
@@ -26,14 +32,14 @@ int main ( int argc, char * argv [] )
     char key        = defKey;
     long count      = 0;
     int r           = 0;
-    int *database   = NULL;
+    database db;
 
     printf("Pozadavky:\n");
 
     while( true ) {
-        r = CheckInput( scanf( " %c", &key ), 1 );
+        r =  scanf( " %c", &key );
             
-        if( r || ( key != addKey && key != calKey ) )
+        if( CheckInput( r, 1 ) || ( key != addKey && key != calKey ) )
             break;
 
         if( key == addKey ) {
@@ -41,9 +47,12 @@ int main ( int argc, char * argv [] )
 
             if( CheckInput( scanf( " %d", &id ), 1 ) 
                     || id < 0 || id > 99999 ) {
+                free( db.data );
                 ErrorMsg();
                 return EXIT_FAILURE;
             }
+
+            printf( "%d\n", AddUser( id, &db ) );
 
         }
         else if( key == calKey ) {
@@ -52,12 +61,16 @@ int main ( int argc, char * argv [] )
 
             if( CheckInput( scanf( " %d %d", &from, &to ), 2 )
                     || from < 0 || to >= count || from > to ) {
+                free( db.data );
                 ErrorMsg();
                 return EXIT_FAILURE;
             }
 
+            pritnf("%d / %d\n", CalculateUsers( from, to, &db ), to - from + 1 );
+            
         }
     }
+    free( db.data );
 
     if( r != EOF ) {
         ErrorMsg();
@@ -77,12 +90,12 @@ void ErrorMsg( void )
     printf("Nespravny vstup.\n");
 }
 
-void AddUser( int id, int *database )
+int AddUser( int id, database *db )
 {
 
 }
 
-void CalculateUsers( int from, int to, int *database )
+int CalculateUsers( int from, int to, database *db )
 {
 
 }
