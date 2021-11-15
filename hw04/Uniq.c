@@ -26,6 +26,7 @@ bool CheckInput     ( int returnVal, int wantedVal );
 void ErrorMsg       ( void );
 int  AddUser        ( int id, database *db );
 int  CalculateUsers ( int from, int to, database *db );
+void Printing       ( int entry );
 
 //
 
@@ -55,7 +56,7 @@ int main ( int argc, char * argv [] )
                 return EXIT_FAILURE;
             }
 
-            printf( "%d\n", AddUser( id, &db ) );
+            Printing( AddUser( id, &db ) );
 
         }
         else if( key == calKey ) {
@@ -122,10 +123,10 @@ int AddUser( int id, database *db )
 
 int CalculateUsers( int from, int to, database *db )
 {
-    int count = db->len;
+    int count = to - from + 1;
 
-    for( int i = 0; i < db->len; i++ ) {
-        for( int y = i + 1; y < db->len; y++ ) {
+    for( int i = from; i < to; i++ ) {
+        for( int y = i + 1; y < to; y++ ) {
             if( db->data[i] == db->data[y] ) {
                 count--;
                 break;
@@ -134,4 +135,13 @@ int CalculateUsers( int from, int to, database *db )
     }
 
     return count;
+}
+
+void Printing( int entry )
+{
+    if( entry == 1 )
+        printf("prvni navsteva\n");
+    else
+        printf( "navsteva #%d\n", entry );
+    return;
 }
