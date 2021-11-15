@@ -70,7 +70,7 @@ int main ( int argc, char * argv [] )
                 return EXIT_FAILURE;
             }
 
-            printf("%d / %d\n", CalculateUsers( from, to, &db ), to - from + 1 );
+            printf( "> %d / %d\n", CalculateUsers( from, to, &db ), to - from + 1 );
             
         }
     }
@@ -125,8 +125,8 @@ int CalculateUsers( int from, int to, database *db )
 {
     int count = to - from + 1;
 
-    for( int i = from; i < to; i++ ) {
-        for( int y = i + 1; y < to; y++ ) {
+    for( int i = from; i <= to; i++ ) {
+        for( int y = i + 1; y <= to; y++ ) {
             if( db->data[i] == db->data[y] ) {
                 count--;
                 break;
@@ -140,8 +140,8 @@ int CalculateUsers( int from, int to, database *db )
 void Printing( int entry )
 {
     if( entry == 1 )
-        printf("prvni navsteva\n");
+        printf( "> prvni navsteva\n" );
     else
-        printf( "navsteva #%d\n", entry );
+        printf( "> navsteva #%d\n", entry );
     return;
 }
