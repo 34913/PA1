@@ -7,6 +7,8 @@
 
 bool CheckInput( int returnVal, int wantedVal );
 void ErrorMsg( void );
+void AddUser( int id, int *database );
+void CalculateUsers( int from, int to, int *database );
 
 //
 
@@ -21,9 +23,11 @@ enum keysEnum
 
 int main ( int argc, char * argv [] )
 {
-    char key = ' ';
-    long count = 0;
-    int r = 0;
+    char key        = defKey;
+    long count      = 0;
+    int r           = 0;
+    int *database   = NULL;
+
     printf("Pozadavky:\n");
 
     while( true ) {
@@ -73,3 +77,12 @@ void ErrorMsg( void )
     printf("Nespravny vstup.\n");
 }
 
+void AddUser( int id, int *database )
+{
+
+}
+
+void CalculateUsers( int from, int to, int *database )
+{
+
+}
