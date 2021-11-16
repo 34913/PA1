@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-
 //
 
 enum keysEnum
@@ -24,7 +23,7 @@ typedef struct dbStruct
 
 bool CheckInput     ( int returnVal, int wantedVal );
 void ErrorMsg       ( void );
-int  AddUser        ( int id, database *db );
+int  AddUser        ( int id, database *db, database *users );
 int  CalculateUsers ( int from, int to, database *db );
 void Printing       ( int entry );
 
@@ -34,7 +33,14 @@ int main ( int argc, char * argv [] )
 {
     char key        = defKey;
     int r           = 0;
+    database users;
     database db;
+
+    users.len = 100000;
+    users.data = (int *)malloc( sizeof( int ) * users.len );
+
+    for( int i = 0; i < users.len; i++ )
+        users.data[i] = 0;
     db.len = 0;
     db.data = NULL;
 
@@ -52,11 +58,13 @@ int main ( int argc, char * argv [] )
             if( CheckInput( scanf( " %d", &id ), 1 ) 
                     || id < 0 || id > 99999 ) {
                 free( db.data );
+                free( users.data );
+
                 ErrorMsg();
                 return EXIT_FAILURE;
             }
 
-            Printing( AddUser( id, &db ) );
+            Printing( AddUser( id, &db, &users ) );
 
         }
         else if( key == calKey ) {
@@ -66,6 +74,8 @@ int main ( int argc, char * argv [] )
             if( CheckInput( scanf( " %d %d", &from, &to ), 2 )
                     || from < 0 || to >= db.len || from > to ) {
                 free( db.data );
+                free( users.data );
+
                 ErrorMsg();
                 return EXIT_FAILURE;
             }
@@ -75,6 +85,7 @@ int main ( int argc, char * argv [] )
         }
     }
     free( db.data );
+    free( users.data );
 
     if( r != EOF ) {
         ErrorMsg();
@@ -94,7 +105,7 @@ void ErrorMsg( void )
     printf("Nespravny vstup.\n");
 }
 
-int AddUser( int id, database *db )
+int AddUser( int id, database *db, database *users )
 {
     void *help;
     if( db->len == 0 )
@@ -102,23 +113,13 @@ int AddUser( int id, database *db )
     else
         help = realloc( db->data, sizeof( int ) * (db->len + 1) );
 
-    if( help == NULL ) {
-        printf( "Not enough memory\n" );
-        free( db->data );
-        exit( EXIT_FAILURE );
-    }
-
     db->data = (int* )help;
     db->data[db->len] = id;
 
     db->len = db->len + 1;
 
-    int count = 1;
-    for( int i = 0; i < db->len - 1; i++ ) {
-        if( (db->data)[i] == id )
-            count++;
-    }
-    return count;
+    users->data[ id ] = users->data[ id ] + 1;
+    return users->data[ id ];
 }
 
 int CalculateUsers( int from, int to, database *db )
