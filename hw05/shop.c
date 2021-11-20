@@ -45,6 +45,7 @@ bool ExtendArr ( list *arr, pointRecord *sorted );
 int Partition_r( record **arr, int left, int right );
 void Quicksort( record **arr, int left, int right );
 void Swap( record **a, record **b );
+void Merge( pointRecord *sorted );
 
 //
 
@@ -103,13 +104,11 @@ int main(void)
                     exists = true;
                     r->names[ i ]->count++;
 
-                    if( r->names[ i ]->index < sorted.sorted ) {
+                    if( r->names[ i ]->index < sorted.sorted && r->names[ i ]->index != 0 ) {
                         long index = r->names[ i ]->index - 1;
                         for( ; index > 0 && sorted.pointers[ index - 1 ]->count == r->names[ i ]->count - 1; index-- );
-
                         Swap( &( sorted.pointers[ r->names[ i ]->index ] ), &( sorted.pointers[ index ] ) );
                     }
-
                     break;
                 }
             }
@@ -132,17 +131,12 @@ int main(void)
             if( newData ) {
                 Quicksort( sorted.pointers, sorted.sorted, sorted.count - 1 );
 
-
+                if( sorted.sorted != 0 )
+                    Merge( &sorted );
 
                 sorted.sorted = sorted.count;
                 newData = false;
             }
-
-            for( long i = 0; i < sorted.count; i++ ) {
-                record *r = sorted.pointers[ i ];
-                printf( "%s %ld - %p\n", r->name, r->count, r );
-            }
-            printf("\n");
         }
         else if( c == num ) {
             
@@ -217,8 +211,6 @@ int Partition_r( record **arr, int left, int right )
 {
     srand( time(NULL) );
     long random = left + rand() % ( right - left );
-    record *temp;
-    long index;
 
     Swap( &( arr[ random ] ), &( arr[ right ] ) );
     long pivot = arr[ right ]->count;
@@ -254,4 +246,35 @@ void Swap( record **a, record **b )
     long index = (*a)->index;
     (*a)->index = (*b)->index;
     (*b)->index = index;
+}
+
+void Merge( pointRecord *sorted )
+{
+    long in1 = 0;
+    long in2 = sorted->sorted;
+    long index = 0;
+    record **pointers = (record **)malloc( sizeof( record* ) );
+
+    while( in1 < sorted->sorted && in2 < sorted->count ) {
+        if( sorted->pointers[ in1 ]->count > sorted->pointers[ in2 ]->count )
+            pointers[ index ] = sorted->pointers[ in1++ ];
+        else
+            pointers[ index ] = sorted->pointers[ in2++ ];
+        pointers[ index ]->index = index;
+        index++;
+    }
+
+    while( in1 < sorted->sorted ) {
+        pointers[ index ] = sorted->pointers[ in1++ ];
+        pointers[ index]->index = index;
+        index++;
+    }
+    while( in2 < sorted->count ) {
+        pointers[ index ] = sorted->pointers[ in2++ ];
+        pointers[ index ]->index = index;
+        index++;
+    }
+
+    free( sorted->pointers );
+    sorted->pointers = pointers;
 }
