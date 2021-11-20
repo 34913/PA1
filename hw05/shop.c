@@ -1,11 +1,12 @@
 // libraries
 
 #include <stdio.h>      // standard I/O
-#include <stdbool.h>    // boolean values
-#include <stdlib.h>     // malloc
-#include <string.h>
+#include <stdbool.h>    // boolean logic values
+#include <stdlib.h>     // malloc, realloc, free
+#include <string.h>     // using string relative functions
+#include <time.h>       // using time to set srand
 
-#define MAX_LEN 99
+#define MAX_LEN 99      // max length of words on input
 
 enum keys {
     add = '+',
@@ -36,6 +37,9 @@ typedef struct pointRecord_struct
 void ErrorMessage();
 void ClearArr( list *arr, pointRecord *sorted );
 bool ExtendArr ( list *arr, pointRecord *sorted );
+
+int Partition_r( record **arr, int left, int right );
+void Quicksort( record **arr, int left, int right );
 
 //
 
@@ -176,3 +180,43 @@ bool ExtendArr ( list *r, pointRecord *sorted )
 
     return true;
 }
+
+int Partition_r( record **arr, int left, int right )
+{
+    srand( time(NULL) );
+    long random = left + rand() % ( right - left );
+    record *temp;
+
+    temp = arr[ random ];
+    arr[ random ] = arr[ right ];
+    arr[ right ] = temp;
+
+    long pivot = arr[ right ]->count;
+
+    long i = left - 1;
+    for( long j = left; j <= right - 1; j++ ) {
+        if( arr[ j ]->count <= pivot ) {
+            temp = arr[ ++i ];
+            arr[ i ] = arr[ j ];
+            arr[ j ] = temp;
+        }
+    }
+
+    temp = arr[ i + 1 ];
+    arr[ i + 1 ] = arr[ right ];
+    arr[ right ] = temp;
+
+    return (i + 1);
+}
+
+void Quicksort( record **arr, int left, int right )
+{
+    if( left < right ) {
+        long pIndex = Partition_r( arr, left, right );
+
+        Quicksort( arr, left, pIndex - 1 );
+        Quicksort( arr, pIndex + 1, right );
+    }
+    return;
+}
+
