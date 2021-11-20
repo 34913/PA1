@@ -19,6 +19,7 @@ typedef struct record_struct
 {
     char *name;
     long count;
+    long index;
 } record;
 
 typedef struct list_struct
@@ -31,7 +32,10 @@ typedef struct list_struct
 typedef struct pointRecord_struct
 {
     record **pointers;
-    int count;
+    long count;
+
+    long sorted;
+    //long *freq;
 } pointRecord;
 
 void ErrorMessage();
@@ -51,6 +55,9 @@ int main(void)
     list arr[MAX_LEN];
     pointRecord sorted;
     sorted.count = 0;
+    sorted.sorted = 0;
+
+    bool newData = false;
 
     for( int i = 0; i < MAX_LEN; i++ ) {
         arr[i].length = 0;
@@ -90,10 +97,23 @@ int main(void)
             bool exists = false;
             list *r = &arr[ len - 1 ];
 
-            for( int i = 0; i < r->length; i++ ) {
+            for( long i = 0; i < r->length; i++ ) {
                 if( strcmp( str, r->names[ i ]->name ) == 0 ) {
                     exists = true;
                     r->names[ i ]->count++;
+
+                    if( r->names[ i ]->index < sorted.sorted ) {
+                        long index = r->names[ i ]->index - 1;
+                        for( ; index > 0 && sorted.pointers[ index - 1 ] == r->names[ i ]->count; index++ );
+
+                        record *temp = r->names[ i ];
+                        r->names[ i ] = sorted.pointers[ index ];
+                        sorted.pointers[ index ] = temp;
+
+                        sorted.pointers[ index ]->index = r->names[ i ]->index;
+                        r->names[ i ]->index = index;
+                    }
+
                     break;
                 }
             }
@@ -107,13 +127,23 @@ int main(void)
                 
                 strncpy( r->names[ r->length - 1 ]->name, str, len );
                 r->names[ r->length - 1 ]->count = 1;
+                r->names[ r->length - 1 ]->index = sorted.count - 1;
+
+                newData = true;
             }
         }
         else if( c == all ) {
-            
+            if( newData ) {
+
+                Quicksort( sorted.pointers, sorted.sorted, sorted.count - 1 );
+
+
+                sorted.sorted = sorted.count;
+                newData = false;
+            }
         }
         else if( c == num ) {
-        
+            
         }
         else {
             ErrorMessage();
@@ -186,10 +216,15 @@ int Partition_r( record **arr, int left, int right )
     srand( time(NULL) );
     long random = left + rand() % ( right - left );
     record *temp;
+    long index;
 
     temp = arr[ random ];
     arr[ random ] = arr[ right ];
     arr[ right ] = temp;
+
+    index = arr[ random ]->index;
+    arr[ random ]->index = arr[ right ]->index;
+    arr[ right ]->index = index;
 
     long pivot = arr[ right ]->count;
 
@@ -199,12 +234,20 @@ int Partition_r( record **arr, int left, int right )
             temp = arr[ ++i ];
             arr[ i ] = arr[ j ];
             arr[ j ] = temp;
+
+            index = arr[ i ]->index;
+            arr[ i ]->index = arr[ j ]->index;
+            arr[ j ]->index = index;
         }
     }
 
     temp = arr[ i + 1 ];
     arr[ i + 1 ] = arr[ right ];
     arr[ right ] = temp;
+
+    index = arr[ i + 1 ]->index;
+    arr[ i + 1 ]->index = arr[ right ]->index;
+    arr[ right ]->index = index;
 
     return (i + 1);
 }
