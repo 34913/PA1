@@ -44,6 +44,7 @@ bool ExtendArr ( list *arr, pointRecord *sorted );
 
 int Partition_r( record **arr, int left, int right );
 void Quicksort( record **arr, int left, int right );
+void Swap( record **a, record **b );
 
 //
 
@@ -104,14 +105,9 @@ int main(void)
 
                     if( r->names[ i ]->index < sorted.sorted ) {
                         long index = r->names[ i ]->index - 1;
-                        for( ; index > 0 && sorted.pointers[ index - 1 ] == r->names[ i ]->count; index++ );
+                        for( ; index > 0 && sorted.pointers[ index - 1 ]->count == r->names[ i ]->count - 1; index-- );
 
-                        record *temp = r->names[ i ];
-                        r->names[ i ] = sorted.pointers[ index ];
-                        sorted.pointers[ index ] = temp;
-
-                        sorted.pointers[ index ]->index = r->names[ i ]->index;
-                        r->names[ i ]->index = index;
+                        Swap( &( sorted.pointers[ r->names[ i ]->index ] ), &( sorted.pointers[ index ] ) );
                     }
 
                     break;
@@ -134,13 +130,19 @@ int main(void)
         }
         else if( c == all ) {
             if( newData ) {
-
                 Quicksort( sorted.pointers, sorted.sorted, sorted.count - 1 );
+
 
 
                 sorted.sorted = sorted.count;
                 newData = false;
             }
+
+            for( long i = 0; i < sorted.count; i++ ) {
+                record *r = sorted.pointers[ i ];
+                printf( "%s %ld - %p\n", r->name, r->count, r );
+            }
+            printf("\n");
         }
         else if( c == num ) {
             
@@ -218,36 +220,16 @@ int Partition_r( record **arr, int left, int right )
     record *temp;
     long index;
 
-    temp = arr[ random ];
-    arr[ random ] = arr[ right ];
-    arr[ right ] = temp;
-
-    index = arr[ random ]->index;
-    arr[ random ]->index = arr[ right ]->index;
-    arr[ right ]->index = index;
-
+    Swap( &( arr[ random ] ), &( arr[ right ] ) );
     long pivot = arr[ right ]->count;
 
     long i = left - 1;
     for( long j = left; j <= right - 1; j++ ) {
-        if( arr[ j ]->count <= pivot ) {
-            temp = arr[ ++i ];
-            arr[ i ] = arr[ j ];
-            arr[ j ] = temp;
-
-            index = arr[ i ]->index;
-            arr[ i ]->index = arr[ j ]->index;
-            arr[ j ]->index = index;
+        if( arr[ j ]->count >= pivot ) {
+            Swap( &( arr[ ++i ] ), &( arr[ j ] ) );
         }
     }
-
-    temp = arr[ i + 1 ];
-    arr[ i + 1 ] = arr[ right ];
-    arr[ right ] = temp;
-
-    index = arr[ i + 1 ]->index;
-    arr[ i + 1 ]->index = arr[ right ]->index;
-    arr[ right ]->index = index;
+    Swap( &( arr[ i + 1 ] ), &( arr[ right ] ) );
 
     return (i + 1);
 }
@@ -263,3 +245,13 @@ void Quicksort( record **arr, int left, int right )
     return;
 }
 
+void Swap( record **a, record **b )
+{
+    record *temp = *a;
+    *a = *b;
+    *b = temp;
+
+    long index = (*a)->index;
+    (*a)->index = (*b)->index;
+    (*b)->index = index;
+}
