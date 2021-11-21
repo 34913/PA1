@@ -5,6 +5,10 @@
 
 //
 
+#define MAX_LEN 100000
+
+//
+
 enum keysEnum
 {
     addKey = '+',
@@ -17,7 +21,6 @@ typedef struct dbStruct
     int *data;
     int len;
 } database;
-
 
 //
 
@@ -36,8 +39,8 @@ int main ( int argc, char * argv [] )
     database users;
     database db;
 
-    users.len = 100000;
-    users.data = (int *)malloc( sizeof( int ) * users.len );
+    users.len = MAX_LEN;
+    users.data = ( int * )malloc( sizeof( int ) * users.len );
 
     for( int i = 0; i < users.len; i++ )
         users.data[i] = 0;
@@ -55,7 +58,7 @@ int main ( int argc, char * argv [] )
         if( key == addKey ) {
             int id = 0;
 
-            if( CheckInput( scanf( " %d", &id ), 1 ) 
+            if( CheckInput( scanf( " %d", &id ), 1 )
                     || id < 0 || id > 99999 ) {
                 free( db.data );
                 free( users.data );
@@ -125,16 +128,14 @@ int AddUser( int id, database *db, database *users )
 int CalculateUsers( int from, int to, database *db )
 {
     int count = to - from + 1;
+    bool temp[ MAX_LEN ] = { 0 };
 
     for( int i = from; i <= to; i++ ) {
-        for( int y = i + 1; y <= to; y++ ) {
-            if( db->data[i] == db->data[y] ) {
-                count--;
-                break;
-            }
-        }
+        if( temp[ db->data[ i ] ] )
+            count--;
+        else
+            temp[ db->data[ i ] ] = true;
     }
-
     return count;
 }
 
