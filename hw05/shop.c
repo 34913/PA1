@@ -106,12 +106,15 @@ int main(void)
                 if( strcmp( str, r->names[ i ]->name ) == 0 ) {
                     exists = true;
                     r->names[ i ]->count++;
-
+                    
                     if( r->names[ i ]->index < sorted.sorted && r->names[ i ]->index != 0 ) {
-                        long index = r->names[ i ]->index - 1;
-                        for( ; index > 0 && sorted.pointers[ index - 1 ]->count == r->names[ i ]->count - 1; index-- );
-                        
-                        Swap( &( sorted.pointers[ r->names[ i ]->index ] ), &( sorted.pointers[ index ] ) );
+                        if( sorted.indexes[ r->names[ i ]->count - 2 ] == 0 ) {
+                            sorted.indexes = ( long* )realloc( sorted.indexes, sizeof( long ) * r->names[ i ]->count );
+                            sorted.indexes[ r->names[ i ]->count - 1 ] = 0;
+                        }
+                        Swap( &( sorted.pointers[ sorted.indexes[ r->names[ i ]->count - 2 ] ] ),
+                              &( sorted.pointers[ r->names[ i ]->index ] ) );
+                        sorted.indexes[ r->names[ i ]->count - 2 ]++;
                     }
                     break;
                 }
@@ -137,18 +140,20 @@ int main(void)
 
                 sorted.sorted = sorted.count;
                 free( sorted.indexes );
-                sorted.indexes = ( long* )malloc( sizeof( long ) );
+                sorted.indexes = ( long* )malloc( sizeof( long ) * sorted.pointers[ 0 ]->count );
                 
-                long index = 1;
-                sorted.indexes[ 0 ] = 0;
+                long index = sorted.pointers[ 0 ]->count - 1;
+                sorted.indexes[ index-- ] = 0;
                 for( long i = 1; i < sorted.count; i++ ) {
-                    if( sorted.pointers[ i ]->count != sorted.pointers[ i - 1 ]->count ) {
-                        sorted.indexes = ( long* )realloc( sorted.indexes, sizeof( long ) * ++index );
-                        sorted.indexes[ index - 1 ] = i;
-                    }
+                    if( sorted.pointers[ i ]->count == index + 2 )
+                        continue;
+
+                    for( long y = sorted.pointers[ i ]->count - 1; y <= index; y++ )
+                        sorted.indexes[ y ] = i;
+                    index = sorted.pointers[ i ]->count - 2;
                 }
                 newData = false;
-            }
+            }            
         }
         else if( c == num ) {
             
