@@ -32,7 +32,7 @@ void Printing       ( int entry );
 
 //
 
-int main ( int argc, char * argv [] )
+int main ( void )
 {
     char key        = defKey;
     int r           = 0;
@@ -43,11 +43,11 @@ int main ( int argc, char * argv [] )
     users.data = ( int * )malloc( sizeof( int ) * users.len );
 
     for( int i = 0; i < users.len; i++ )
-        users.data[i] = 0;
+        users.data[ i ] = 0;
     db.len = 0;
     db.data = NULL;
 
-    printf("Pozadavky:\n");
+    printf( "Pozadavky:\n" );
 
     while( true ) {
         r =  scanf( " %c", &key );
@@ -59,7 +59,7 @@ int main ( int argc, char * argv [] )
             int id = 0;
 
             if( CheckInput( scanf( " %d", &id ), 1 )
-                    || id < 0 || id > 99999 ) {
+                    || id < 0 || id > MAX_LEN - 1 ) {
                 free( db.data );
                 free( users.data );
 
@@ -110,14 +110,14 @@ void ErrorMsg( void )
 
 int AddUser( int id, database *db, database *users )
 {
-    void *help;
+    void *help = NULL;
     if( db->len == 0 )
         help = malloc( sizeof( int ) );
     else
-        help = realloc( db->data, sizeof( int ) * (db->len + 1) );
+        help = realloc( db->data, sizeof( int ) * ( db->len + 1 ) );
 
-    db->data = (int* )help;
-    db->data[db->len] = id;
+    db->data = ( int* )help;
+    db->data[ db->len ] = id;
 
     db->len = db->len + 1;
 
