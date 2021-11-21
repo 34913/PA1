@@ -73,11 +73,13 @@ int main(void)
         arr[i].names = NULL;
     }
 
+    printf( "Pocet sledovanych:\n" );
     if( scanf( " %d", &tracked ) != 1 || tracked <= 0 ) {
         ErrorMessage();
         ClearArr( arr, &sorted );
         return EXIT_FAILURE;
     }
+    printf( "Pozadavky: \n");
 
     char c = def;
     int d = scanf( " %c", &c );
@@ -134,17 +136,53 @@ int main(void)
             }
         }
         else if( c == all ) {
-            if( sorted.newData ) {
+            if( sorted.newData )
                 AllTogether( &sorted );
 
-                
+            long count = 0;
+            long sum = 0;
+            for( long i = sorted.pointers[ 0 ]->count - 1; count < tracked && i >= 0 ; i-- ) {
+                long temp = 0;
+                if( i != 0 )
+                    temp = ( sorted.indexes[ i - 1 ] - sorted.indexes[ i ] );
+                else
+                    temp = ( sorted.count - sorted.indexes[ i ] );
+
+                if( temp == 1 ) {
+                    record *r = sorted.pointers[ sorted.indexes[ i ] ];
+                    printf( "%ld. %s, %ldx\n", sorted.indexes[ i ] + 1, r->name, r->count );
+                }
+                else if( temp > 1 ) {
+                    for( long y = 0; y < temp; y++ ) {
+                        record *r = sorted.pointers[ sorted.indexes[ i ] + y ];
+                        printf( "%ld.-%ld. %s, %ldx\n", sorted.indexes[ i ] + 1, temp, r->name, r->count );
+                    }
+                }
+
+                count += temp;
+                sum += temp * sorted.pointers[ sorted.indexes[ i ] ]->count;
             }
+            printf( "Nejprodavanejsi zbozi: prodano %ld kusu\n", sum );
+
         }
         else if( c == num ) {
-            if( sorted.newData ) {
+            if( sorted.newData )
                 AllTogether( &sorted );
 
+            long count = 0;
+            long sum = 0;
+            for( long i = sorted.pointers[ 0 ]->count - 1; count < tracked && i >= 0 ; i-- ) {
+                long temp = 0;
+                if( i != 0 )
+                    temp = ( sorted.indexes[ i - 1 ] - sorted.indexes[ i ] );
+                else
+                    temp = ( sorted.count - sorted.indexes[ i ] );
+
+                count += temp;
+                sum += temp * sorted.pointers[ sorted.indexes[ i ] ]->count;
             }
+            printf( "Nejprodavanejsi zbozi: prodano %ld kusu\n", sum );
+
         }
         else {
             ErrorMessage();
@@ -283,7 +321,7 @@ void AllTogether( pointRecord *sorted )
     Quicksort( sorted->pointers, sorted->sorted, sorted->count - 1 );
 
     if( sorted->sorted != 0 )
-        Merge( &sorted );
+        Merge( sorted );
 
     sorted->sorted = sorted->count;
     free( sorted->indexes );
