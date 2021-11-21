@@ -35,12 +35,12 @@ typedef struct pointRecord_struct
     long count;
 
     long sorted;
-    //long *freq;
+    long *indexes;
 } pointRecord;
 
 void ErrorMessage();
 void ClearArr( list *arr, pointRecord *sorted );
-bool ExtendArr ( list *arr, pointRecord *sorted );
+void ExtendArr ( list *arr, pointRecord *sorted );
 
 int Partition_r( record **arr, int left, int right );
 void Quicksort( record **arr, int left, int right );
@@ -56,8 +56,11 @@ int main(void)
 
     list arr[MAX_LEN];
     pointRecord sorted;
+
     sorted.count = 0;
     sorted.sorted = 0;
+    sorted.indexes = NULL;
+    sorted.pointers = NULL;
 
     bool newData = false;
 
@@ -107,6 +110,7 @@ int main(void)
                     if( r->names[ i ]->index < sorted.sorted && r->names[ i ]->index != 0 ) {
                         long index = r->names[ i ]->index - 1;
                         for( ; index > 0 && sorted.pointers[ index - 1 ]->count == r->names[ i ]->count - 1; index-- );
+                        
                         Swap( &( sorted.pointers[ r->names[ i ]->index ] ), &( sorted.pointers[ index ] ) );
                     }
                     break;
@@ -114,11 +118,8 @@ int main(void)
             }
 
             if( !exists ) {
-                if( !ExtendArr( r, &sorted ) ) {
-                    ErrorMessage();
-                    ClearArr( arr, &sorted );
-                    return EXIT_FAILURE;
-                }
+                ExtendArr( r, &sorted );
+                sorted.pointers[ sorted.count - 1 ] = r->names[ r->length - 1 ];
                 
                 strncpy( r->names[ r->length - 1 ]->name, str, len );
                 r->names[ r->length - 1 ]->count = 1;
@@ -135,6 +136,17 @@ int main(void)
                     Merge( &sorted );
 
                 sorted.sorted = sorted.count;
+                free( sorted.indexes );
+                sorted.indexes = ( long* )malloc( sizeof( long ) );
+                
+                long index = 1;
+                sorted.indexes[ 0 ] = 0;
+                for( long i = 1; i < sorted.count; i++ ) {
+                    if( sorted.pointers[ i ]->count != sorted.pointers[ i - 1 ]->count ) {
+                        sorted.indexes = ( long* )realloc( sorted.indexes, sizeof( long ) * ++index );
+                        sorted.indexes[ index - 1 ] = i;
+                    }
+                }
                 newData = false;
             }
         }
@@ -176,18 +188,17 @@ void ClearArr( list *arr, pointRecord *sorted )
     }
 
     free( sorted->pointers );
+    free( sorted->indexes );
 }
 
-bool ExtendArr ( list *r, pointRecord *sorted )
+void ExtendArr ( list *r, pointRecord *sorted )
 {
     void *help1 = NULL;
+
     if( r->length++ == 0 )
         help1 = malloc( sizeof( record* ) );
     else
         help1 = realloc( r->names, sizeof( record* ) * r->length );
-
-    if( help1 == NULL )
-        return false;
     r->names = ( record** )help1;
     
     record *temp = ( record* )malloc( sizeof( record ) );
@@ -198,13 +209,8 @@ bool ExtendArr ( list *r, pointRecord *sorted )
         help1 = malloc( sizeof( record* ) );
     else
         help1 = realloc( sorted->pointers, sizeof( record* ) * sorted->count );
-
-    if( help1 == NULL )
-        return false;
     sorted->pointers = ( record** )help1;
     sorted->pointers[ sorted->count - 1 ] = temp;
-
-    return true;
 }
 
 int Partition_r( record **arr, int left, int right )
