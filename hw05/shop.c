@@ -36,6 +36,7 @@ typedef struct pointRecord_struct
 
     long sorted;
     long *indexes;
+    bool newData;
 } pointRecord;
 
 void ErrorMessage();
@@ -46,6 +47,8 @@ int Partition_r( record **arr, int left, int right );
 void Quicksort( record **arr, int left, int right );
 void Swap( record **a, record **b );
 void Merge( pointRecord *sorted );
+
+void AllTogether( pointRecord *sorted );
 
 //
 
@@ -61,8 +64,7 @@ int main(void)
     sorted.sorted = 0;
     sorted.indexes = NULL;
     sorted.pointers = NULL;
-
-    bool newData = false;
+    sorted.newData = false;
 
     for( int i = 0; i < MAX_LEN; i++ ) {
         arr[i].length = 0;
@@ -128,35 +130,21 @@ int main(void)
                 r->names[ r->length - 1 ]->count = 1;
                 r->names[ r->length - 1 ]->index = sorted.count - 1;
 
-                newData = true;
+                sorted.newData = true;
             }
         }
         else if( c == all ) {
-            if( newData ) {
-                Quicksort( sorted.pointers, sorted.sorted, sorted.count - 1 );
+            if( sorted.newData ) {
+                AllTogether( &sorted );
 
-                if( sorted.sorted != 0 )
-                    Merge( &sorted );
-
-                sorted.sorted = sorted.count;
-                free( sorted.indexes );
-                sorted.indexes = ( long* )malloc( sizeof( long ) * sorted.pointers[ 0 ]->count );
                 
-                long index = sorted.pointers[ 0 ]->count - 1;
-                sorted.indexes[ index-- ] = 0;
-                for( long i = 1; i < sorted.count; i++ ) {
-                    if( sorted.pointers[ i ]->count == index + 2 )
-                        continue;
-
-                    for( long y = sorted.pointers[ i ]->count - 1; y <= index; y++ )
-                        sorted.indexes[ y ] = i;
-                    index = sorted.pointers[ i ]->count - 2;
-                }
-                newData = false;
-            }            
+            }
         }
         else if( c == num ) {
-            
+            if( sorted.newData ) {
+                AllTogether( &sorted );
+
+            }
         }
         else {
             ErrorMessage();
@@ -288,4 +276,28 @@ void Merge( pointRecord *sorted )
 
     free( sorted->pointers );
     sorted->pointers = pointers;
+}
+
+void AllTogether( pointRecord *sorted )
+{
+    Quicksort( sorted->pointers, sorted->sorted, sorted->count - 1 );
+
+    if( sorted->sorted != 0 )
+        Merge( &sorted );
+
+    sorted->sorted = sorted->count;
+    free( sorted->indexes );
+    sorted->indexes = ( long* )malloc( sizeof( long ) * sorted->pointers[ 0 ]->count );
+    
+    long index = sorted->pointers[ 0 ]->count - 1;
+    sorted->indexes[ index-- ] = 0;
+    for( long i = 1; i < sorted->count; i++ ) {
+        if( sorted->pointers[ i ]->count == index + 2 )
+            continue;
+
+        for( long y = sorted->pointers[ i ]->count - 1; y <= index; y++ )
+            sorted->indexes[ y ] = i;
+        index = sorted->pointers[ i ]->count - 2;
+    }
+    sorted->newData = false;
 }
