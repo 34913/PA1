@@ -6,6 +6,7 @@
 //
 
 #define MAX_LEN 100000
+#define ALLOC 10
 
 //
 
@@ -22,12 +23,21 @@ typedef struct dbStruct
     int len;
 } database;
 
+typedef struct sequenceStruct
+{
+    int *data;
+    int len;
+
+    int allocated;
+    
+} sequence;
+
 //
 
 bool CheckInput     ( int returnVal, int wantedVal );
 void ErrorMsg       ( void );
-int  AddUser        ( int id, database *db, database *users );
-int  CalculateUsers ( int from, int to, database *db );
+int  AddUser        ( int id, sequence *db, database *users );
+int  CalculateUsers ( int from, int to, sequence *db );
 void Printing       ( int entry );
 
 //
@@ -37,7 +47,7 @@ int main ( void )
     char key        = defKey;
     int r           = 0;
     database users;
-    database db;
+    sequence db;
 
     users.len = MAX_LEN;
     users.data = ( int * )malloc( sizeof( int ) * users.len );
@@ -45,7 +55,9 @@ int main ( void )
     for( int i = 0; i < users.len; i++ )
         users.data[ i ] = 0;
     db.len = 0;
+    db.allocated = 0;
     db.data = NULL;
+    
 
     printf( "Pozadavky:\n" );
 
@@ -68,7 +80,6 @@ int main ( void )
             }
 
             Printing( AddUser( id, &db, &users ) );
-
         }
         else if( key == calKey ) {
             int from = 0;
@@ -108,24 +119,23 @@ void ErrorMsg( void )
     printf("Nespravny vstup.\n");
 }
 
-int AddUser( int id, database *db, database *users )
+int AddUser( int id, sequence *db, database *users )
 {
     void *help = NULL;
-    if( db->len == 0 )
-        help = malloc( sizeof( int ) );
-    else
-        help = realloc( db->data, sizeof( int ) * ( db->len + 1 ) );
+    
+    if( db->len == db->allocated ) {
+        db->allocated += ALLOC;
+        help = realloc( db->data, sizeof( int ) * db->allocated );
+        db->data = ( int* )help;
+    }
 
-    db->data = ( int* )help;
-    db->data[ db->len ] = id;
+    db->data[ db->len++ ] = id;
+    users->data[ id ]++;
 
-    db->len = db->len + 1;
-
-    users->data[ id ] = users->data[ id ] + 1;
     return users->data[ id ];
 }
 
-int CalculateUsers( int from, int to, database *db )
+int CalculateUsers( int from, int to, sequence *db )
 {
     int count = to - from + 1;
     bool temp[ MAX_LEN ] = { 0 };
