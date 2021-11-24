@@ -21,7 +21,7 @@ enum keys {
 };
 
 /**
- * @brief one record, saving one thing and its
+ * @brief one record, saving one item and its
  * name, count, index in sorted array
  * 
  */
@@ -157,7 +157,7 @@ int main( void )
     int controlVal = scanf( " %c", &key );
     while( controlVal == 1 ) {
 
-        // adding certain thing
+        // adding certain item
         if( key == add ) {
             char str[ MAX_LEN ];
             
@@ -252,7 +252,7 @@ int main( void )
             }
             printf( "Nejprodavanejsi zbozi: prodano %ld kusu\n", sum );
         }
-        // sorting and printing just the number of sold things
+        // sorting and printing just the number of sold items
         else if( key == num ) {
             if( sorted.newData )
                 AllTogether( &sorted );
@@ -320,13 +320,16 @@ void ExtendArr ( list *ref, pointRecord *sorted )
 {
     void *help1 = NULL;
 
+    // expanding records array
     help1 = realloc( ref->names, sizeof( record* ) * ( ++ref->length ) );
     ref->names = ( record** )help1;
 
+    // allocating the record and place to save the name of item
     record *temp = ( record* )malloc( sizeof( record ) );
     temp->name = ( char* )malloc( sizeof( char ) * ref->nameLen );
     ref->names[ ref->length - 1 ] = temp;
 
+    // expanding the sorted array to save this record
     help1 = realloc( sorted->pointers, sizeof( record* ) * ( ++sorted->count ) );
     sorted->pointers = ( record** )help1;
     sorted->pointers[ sorted->count - 1 ] = temp;
@@ -334,12 +337,14 @@ void ExtendArr ( list *ref, pointRecord *sorted )
 
 int Partition( record **arr, int left, int right )
 {
+    // setting the random pivot
     srand( time(NULL) );
     long random = left + rand() % ( right - left );
 
     Swap( &( arr[ random ] ), &( arr[ right ] ) );
     long pivot = arr[ right ]->count;
 
+    // swaping the items over the pivot
     long i = left - 1;
     for( long j = left; j <= right - 1; j++ ) {
         if( arr[ j ]->count >= pivot ) {
@@ -380,6 +385,9 @@ void Merge( pointRecord *sorted )
     long index = 0;
     record **pointers = (record **)malloc( sizeof( record* ) * sorted->count );
 
+    // merging two parts of array
+    // decides which item is bigger, that is inserted and so on
+    // after one is at its end, the rest is filled with the rest from the second one
     while( in1 < sorted->sorted && in2 < sorted->count ) {
         if( sorted->pointers[ in1 ]->count > sorted->pointers[ in2 ]->count )
             pointers[ index ] = sorted->pointers[ in1++ ];
@@ -406,6 +414,7 @@ void Merge( pointRecord *sorted )
 
 void AllTogether( pointRecord *sorted )
 {
+    // sort the not sorted and merge the to parts
     Quicksort( sorted->pointers, sorted->sorted, sorted->count - 1 );
 
     if( sorted->sorted != 0 )
@@ -415,6 +424,7 @@ void AllTogether( pointRecord *sorted )
     free( sorted->indexes );
     sorted->indexes = ( long* )malloc( sizeof( long ) * sorted->pointers[ 0 ]->count );
     
+    // redefine the indexes of each count of occurances
     long index = sorted->pointers[ 0 ]->count - 1;
     sorted->indexes[ index-- ] = 0;
     for( long i = 1; i < sorted->count; i++ ) {
