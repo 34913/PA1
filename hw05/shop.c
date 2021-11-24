@@ -1,13 +1,18 @@
 // libraries
 
-#include <stdio.h>      // standard I/O
-#include <stdbool.h>    // boolean logic values
-#include <stdlib.h>     // malloc, realloc, free
-#include <string.h>     // using string relative functions
-#include <time.h>       // using time to set srand
+#include <stdio.h>      /* standard I/O */
+#include <stdbool.h>    /* boolean logic values */
+#include <stdlib.h>     /* malloc, realloc, free */
+#include <string.h>     /* using string relative functions */
+#include <time.h>       /* using time to set srand */
 
-#define MAX_LEN 99      // max length of words on input
+#define MAX_LEN 99      /* max length of words on input */
 
+// typedefs and enums
+
+/**
+ * @brief keys of input, indicating what does the user want the program to do at the moment
+ */
 enum keys {
     add = '+',
     all = '#',
@@ -15,6 +20,11 @@ enum keys {
     def = ' ',
 };
 
+/**
+ * @brief one record, saving one thing and its
+ * name, count, index in sorted array
+ * 
+ */
 typedef struct record_struct
 {
     char *name;
@@ -22,6 +32,11 @@ typedef struct record_struct
     long index;
 } record;
 
+/**
+ * @brief saving array records all with specified name length
+ * , length saves number of these records in array 
+ * 
+ */
 typedef struct list_struct
 {
     record **names;
@@ -29,6 +44,10 @@ typedef struct list_struct
     long length;
 } list;
 
+/**
+ * @brief saving everything for keeping sorted data together
+ * 
+ */
 typedef struct pointRecord_struct
 {
     record **pointers;
@@ -39,26 +58,79 @@ typedef struct pointRecord_struct
     bool newData;
 } pointRecord;
 
+// prototyping
+
+/**
+ * @brief Prints out common error message in stdout
+ */
 void ErrorMessage   ( void );
+
+/**
+ * @brief            Clears allocated memory in given pointers
+ * 
+ * @param[in] arr    struct list to free all allocated memory
+ * @param[in] sorted sequence of all record pointers to free allocated memory
+ */
 void ClearArr       ( list *arr, pointRecord *sorted );
+
+/**
+ * @brief             Extending function for allocating more space for saving
+ * 
+ * @param[out] arr    struct list to expand array of record pointers
+ * @param[out] sorted sequence of all record pointers to be expanded
+ */
 void ExtendArr      ( list *arr, pointRecord *sorted );
 
-int Partition_r     ( record **arr, int left, int right );
+/**
+ * @brief            Auxiliary function for quicksort, dont use this on your own, separates array by pivot
+ * 
+ * @param[out] arr   array to be sorted
+ * @param[in]  left  left index inclusive
+ * @param[in] right right index inclusive
+ * @return int position of pivot in array
+ */
+int Partition       ( record **arr, int left, int right );
+
+/**
+ * @brief            Sorting by quicksort algorithm, divide and conquer, using random pivot 
+ * 
+ * @param[out] arr   array of record pointers to be sorted by the count
+ * @param[in]  left  left index inclusive
+ * @param[in]  right right index inclusive
+ */
 void Quicksort      ( record **arr, int left, int right );
+
+/**
+ * @brief       Used to swap two pointers of record on given pointers
+ * 
+ * @param[in] a first pointer to swap with second
+ * @param[in] b second pointer to swap with first
+ */
 void Swap           ( record **a, record **b );
+
+/**
+ * @brief             Merges sorted and freshly sorted parts of sequence of record pointers by count
+ * 
+ * @param[out] sorted struct pointer to sort array of record pointers
+ */
 void Merge          ( pointRecord *sorted );
 
+/**
+ * @brief             Combines all sorting parts all together and from partially sorted array produces sorted array of record pointers
+ *                    also resets indexes for fast sorting on adding already added data 
+ * 
+ * @param[out] sorted struct pointer to sort array of record pointers
+ */
 void AllTogether    ( pointRecord *sorted );
 
 //
 
 int main( void )
 {
-    // saying how many of tracked things are going to be displayed
-    int tracked     = 0;
-
-    list arr[MAX_LEN];
+    list arr[ MAX_LEN ];
     pointRecord sorted;
+
+    int tracked     = 0;
 
     sorted.count    = 0;
     sorted.sorted   = 0;
@@ -81,11 +153,12 @@ int main( void )
     }
     printf( "Pozadavky:\n");
 
-    char c = def;
-    int d = scanf( " %c", &c );
-    while( d == 1 ) {
+    char key = def;
+    int controlVal = scanf( " %c", &key );
+    while( controlVal == 1 ) {
 
-        if( c == add ) {
+        // adding certain thing
+        if( key == add ) {
             char str[ MAX_LEN ];
             
             if( scanf( " %99s", str ) != 1 ) {
@@ -103,43 +176,49 @@ int main( void )
                 }
             }
 
-            bool exists = false;
-            list *r = &arr[ len - 1 ];
-
-            for( long i = 0; i < r->length; i++ ) {
-                if( strcmp( str, r->names[ i ]->name ) == 0 ) {
-                    exists = true;
-                    r->names[ i ]->count++;
-                    
-                    if( r->names[ i ]->index < sorted.sorted ) {
-                        if( sorted.indexes[ r->names[ i ]->count - 2 ] == 0 ) {
-                            sorted.indexes = ( long* )realloc( sorted.indexes, sizeof( long ) * r->names[ i ]->count );
-                            sorted.indexes[ r->names[ i ]->count - 1 ] = 0;
-                        }
-
-                        if( r->names[ i ]->index != 0 )
-                            Swap( &( sorted.pointers[ sorted.indexes[ r->names[ i ]->count - 2 ] ] ),
-                                  &( sorted.pointers[ r->names[ i ]->index ] ) );
-                        sorted.indexes[ r->names[ i ]->count - 2 ]++;
-                        
-                    }
-
+            list *ref = &arr[ len - 1 ];
+            long i;
+            for( i = 0; i < ref->length; i++ ) {
+                if( strcmp( str, ref->names[ i ]->name ) == 0 )
                     break;
-                }
             }
+            
+            if( i == ref->length ) {
+                // new record -> expand and save
+                // sorted.newData true value indicates whether there is need for resorting the arr
 
-            if( !exists ) {
-                ExtendArr( r, &sorted );
-                sorted.pointers[ sorted.count - 1 ] = r->names[ r->length - 1 ];
+                ExtendArr( ref, &sorted );
+                sorted.pointers[ sorted.count - 1 ] = ref->names[ ref->length - 1 ];
                 
-                strncpy( r->names[ r->length - 1 ]->name, str, len );
-                r->names[ r->length - 1 ]->count = 1;
-                r->names[ r->length - 1 ]->index = sorted.count - 1;
+                strncpy( ref->names[ ref->length - 1 ]->name, str, len );
+                ref->names[ ref->length - 1 ]->count = 1;
+                ref->names[ ref->length - 1 ]->index = sorted.count - 1;
 
                 sorted.newData = true;
             }
+            else {
+                // already added record -> add 1 to count
+                // swap with record on the top of sorted records with same count
+                //  -> if on the top already, expand and move the indexes further
+
+                ref->names[ i ]->count++;
+
+                if( ref->names[ i ]->index < sorted.sorted ) {
+                    if( sorted.indexes[ ref->names[ i ]->count - 2 ] == 0 ) {
+                        sorted.indexes = ( long* )realloc( sorted.indexes, sizeof( long ) * ref->names[ i ]->count );
+                        sorted.indexes[ ref->names[ i ]->count - 1 ] = 0;
+                    }
+
+                    if( ref->names[ i ]->index != 0 )
+                        Swap( &( sorted.pointers[ sorted.indexes[ ref->names[ i ]->count - 2 ] ] ),
+                                &( sorted.pointers[ ref->names[ i ]->index ] ) );
+                    sorted.indexes[ ref->names[ i ]->count - 2 ]++;
+                    
+                }
+            }
         }
-        else if( c == all ) {
+        // sorting and printing all data loaded
+        else if( key == all ) {
             if( sorted.newData )
                 AllTogether( &sorted );
 
@@ -147,31 +226,34 @@ int main( void )
             long sum = 0;
             for( long i = sorted.pointers[ 0 ]->count - 1; count < tracked && i >= 0 ; i-- ) {
                 long temp = 0;
+                // determines how many records are there with same count
+                //  -> to print the range
                 if( i != 0 )
                     temp = ( sorted.indexes[ i - 1 ] - sorted.indexes[ i ] );
                 else
                     temp = ( sorted.count - sorted.indexes[ i ] );
 
                 if( temp == 1 ) {
-                    record *r = sorted.pointers[ sorted.indexes[ i ] ];
-                    printf( "%ld. %s, %ldx\n", sorted.indexes[ i ] + 1, r->name, r->count );
+                    record *ref = sorted.pointers[ sorted.indexes[ i ] ];
+                    printf( "%ld. %s, %ldx\n", sorted.indexes[ i ] + 1, ref->name, ref->count );
                 }
                 else if( temp > 1 ) {
                     for( long y = 0; y < temp; y++ ) {
-                        record *r = sorted.pointers[ sorted.indexes[ i ] + y ];
-                        printf( "%ld.-%ld. %s, %ldx\n", sorted.indexes[ i ] + 1, sorted.indexes[ i ] + temp, r->name, r->count );
+                        record *ref = sorted.pointers[ sorted.indexes[ i ] + y ];
+                        printf( "%ld.-%ld. %s, %ldx\n", sorted.indexes[ i ] + 1, sorted.indexes[ i ] + temp, ref->name, ref->count );
                     }
                 }
 
+                // dont print anything, if there is no record of this count
                 if( temp > 0 ) {
-                    //printf( "%ld %ld\n", temp, sorted.indexes[ i ] );
                     count += temp;
                     sum += temp * sorted.pointers[ sorted.indexes[ i ] ]->count;
                 }
             }
             printf( "Nejprodavanejsi zbozi: prodano %ld kusu\n", sum );
         }
-        else if( c == num ) {
+        // sorting and printing just the number of sold things
+        else if( key == num ) {
             if( sorted.newData )
                 AllTogether( &sorted );
 
@@ -179,23 +261,21 @@ int main( void )
             long sum = 0;
             for( long i = sorted.pointers[ 0 ]->count - 1; count < tracked && i >= 0 ; i-- ) {
                 long temp = 0;
+
+                // determines how many records are there with same count
+                //  -> to print the range
                 if( i != 0 )
                     temp = ( sorted.indexes[ i - 1 ] - sorted.indexes[ i ] );
                 else
                     temp = ( sorted.count - sorted.indexes[ i ] );
 
                 if( temp > 0 ) {
-                    //printf( "%ld %ld\n", temp, sorted.indexes[ i ] );
                     count += temp;
                     sum += temp * sorted.pointers[ sorted.indexes[ i ] ]->count;
                 }
             }
             printf( "Nejprodavanejsi zbozi: prodano %ld kusu\n", sum );
 
-        }
-        else if( c == '-' ) {
-            for( int i = 0; i < sorted.pointers[ 0 ]->count; i++ )
-                printf( "%ld\n", sorted.indexes[ i ] );
         }
         else {
             ErrorMessage();
@@ -203,14 +283,12 @@ int main( void )
             return EXIT_FAILURE;
         }
 
-        d = scanf( " %c", &c );
-
+        controlVal = scanf( " %c", &key );
     }
     ClearArr( arr, &sorted );
 
-    if( d != EOF ) {
+    if( controlVal != EOF ) {
         ErrorMessage();
-        ClearArr( arr, &sorted );
         return EXIT_FAILURE;
     }
 
@@ -238,23 +316,23 @@ void ClearArr( list *arr, pointRecord *sorted )
     free( sorted->indexes );
 }
 
-void ExtendArr ( list *r, pointRecord *sorted )
+void ExtendArr ( list *ref, pointRecord *sorted )
 {
     void *help1 = NULL;
 
-    help1 = realloc( r->names, sizeof( record* ) * ( ++r->length ) );
-    r->names = ( record** )help1;
+    help1 = realloc( ref->names, sizeof( record* ) * ( ++ref->length ) );
+    ref->names = ( record** )help1;
 
     record *temp = ( record* )malloc( sizeof( record ) );
-    temp->name = ( char* )malloc( sizeof( char ) * r->nameLen );
-    r->names[ r->length - 1 ] = temp;
+    temp->name = ( char* )malloc( sizeof( char ) * ref->nameLen );
+    ref->names[ ref->length - 1 ] = temp;
 
     help1 = realloc( sorted->pointers, sizeof( record* ) * ( ++sorted->count ) );
     sorted->pointers = ( record** )help1;
     sorted->pointers[ sorted->count - 1 ] = temp;
 }
 
-int Partition_r( record **arr, int left, int right )
+int Partition( record **arr, int left, int right )
 {
     srand( time(NULL) );
     long random = left + rand() % ( right - left );
@@ -276,7 +354,7 @@ int Partition_r( record **arr, int left, int right )
 void Quicksort( record **arr, int left, int right )
 {
     if( left < right ) {
-        long pIndex = Partition_r( arr, left, right );
+        long pIndex = Partition( arr, left, right );
 
         Quicksort( arr, left, pIndex - 1 );
         Quicksort( arr, pIndex + 1, right );
@@ -349,3 +427,5 @@ void AllTogether( pointRecord *sorted )
     }
     sorted->newData = false;
 }
+
+//
