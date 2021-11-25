@@ -159,38 +159,39 @@ int main( void )
 
         // adding certain item
         if( key == add ) {
-            char str[ MAX_LEN ];
+            char str[ MAX_LEN + 2 ];
             
-            if( scanf( " %99s", str ) != 1 ) {
+            if( scanf( " %100s", str ) != 1 ) {
                 ErrorMessage();
                 ClearArr( arr, &sorted );
                 return EXIT_FAILURE;
             }
 
             int len = strlen( str );
-            if( len == MAX_LEN ) {
-                if( getchar() != '\n' ) {
-                    ErrorMessage();
-                    ClearArr( arr, &sorted );
-                    return EXIT_FAILURE;
-                }
+            if( len == MAX_LEN + 1 ) {
+                ErrorMessage();
+                ClearArr( arr, &sorted );
+                return EXIT_FAILURE;
             }
 
             list *ref = &arr[ len - 1 ];
+            bool exists = false;
             long i;
             for( i = 0; i < ref->length; i++ ) {
-                if( strcmp( str, ref->names[ i ]->name ) == 0 )
+                if( strcmp( str, ref->names[ i ]->name ) == 0 ) {
+                    exists = true;
                     break;
+                }
             }
             
-            if( i == ref->length ) {
+            if( !exists ) {
                 // new record -> expand and save
                 // sorted.newData true value indicates whether there is need for resorting the arr
 
                 ExtendArr( ref, &sorted );
                 sorted.pointers[ sorted.count - 1 ] = ref->names[ ref->length - 1 ];
                 
-                strncpy( ref->names[ ref->length - 1 ]->name, str, len );
+                strcpy( ref->names[ ref->length - 1 ]->name, str );
                 ref->names[ ref->length - 1 ]->count = 1;
                 ref->names[ ref->length - 1 ]->index = sorted.count - 1;
 
@@ -224,30 +225,32 @@ int main( void )
 
             long count = 0;
             long sum = 0;
-            for( long i = sorted.pointers[ 0 ]->count - 1; count < tracked && i >= 0 ; i-- ) {
-                long temp = 0;
-                // determines how many records are there with same count
-                //  -> to print the range
-                if( i != 0 )
-                    temp = ( sorted.indexes[ i - 1 ] - sorted.indexes[ i ] );
-                else
-                    temp = ( sorted.count - sorted.indexes[ i ] );
+            if( sorted.count > 0 ) {
+                for( long i = sorted.pointers[ 0 ]->count - 1; count < tracked && i >= 0 ; i-- ) {
+                    long temp = 0;
+                    // determines how many records are there with same count
+                    //  -> to print the range
+                    if( i != 0 )
+                        temp = ( sorted.indexes[ i - 1 ] - sorted.indexes[ i ] );
+                    else
+                        temp = ( sorted.count - sorted.indexes[ i ] );
 
-                if( temp == 1 ) {
-                    record *ref = sorted.pointers[ sorted.indexes[ i ] ];
-                    printf( "%ld. %s, %ldx\n", sorted.indexes[ i ] + 1, ref->name, ref->count );
-                }
-                else if( temp > 1 ) {
-                    for( long y = 0; y < temp; y++ ) {
-                        record *ref = sorted.pointers[ sorted.indexes[ i ] + y ];
-                        printf( "%ld.-%ld. %s, %ldx\n", sorted.indexes[ i ] + 1, sorted.indexes[ i ] + temp, ref->name, ref->count );
+                    if( temp == 1 ) {
+                        record *ref = sorted.pointers[ sorted.indexes[ i ] ];
+                        printf( "%ld. %s, %ldx\n", sorted.indexes[ i ] + 1, ref->name, ref->count );
                     }
-                }
+                    else if( temp > 1 ) {
+                        for( long y = 0; y < temp; y++ ) {
+                            record *ref = sorted.pointers[ sorted.indexes[ i ] + y ];
+                            printf( "%ld.-%ld. %s, %ldx\n", sorted.indexes[ i ] + 1, sorted.indexes[ i ] + temp, ref->name, ref->count );
+                        }
+                    }
 
-                // dont print anything, if there is no record of this count
-                if( temp > 0 ) {
-                    count += temp;
-                    sum += temp * sorted.pointers[ sorted.indexes[ i ] ]->count;
+                    // dont print anything, if there is no record of this count
+                    if( temp > 0 ) {
+                        count += temp;
+                        sum += temp * sorted.pointers[ sorted.indexes[ i ] ]->count;
+                    }
                 }
             }
             printf( "Nejprodavanejsi zbozi: prodano %ld kusu\n", sum );
@@ -259,23 +262,24 @@ int main( void )
 
             long count = 0;
             long sum = 0;
-            for( long i = sorted.pointers[ 0 ]->count - 1; count < tracked && i >= 0 ; i-- ) {
-                long temp = 0;
+            if( sorted.count > 0 ) {
+                for( long i = sorted.pointers[ 0 ]->count - 1; count < tracked && i >= 0 ; i-- ) {
+                    long temp = 0;
 
-                // determines how many records are there with same count
-                //  -> to print the range
-                if( i != 0 )
-                    temp = ( sorted.indexes[ i - 1 ] - sorted.indexes[ i ] );
-                else
-                    temp = ( sorted.count - sorted.indexes[ i ] );
+                    // determines how many records are there with same count
+                    //  -> to print the range
+                    if( i != 0 )
+                        temp = ( sorted.indexes[ i - 1 ] - sorted.indexes[ i ] );
+                    else
+                        temp = ( sorted.count - sorted.indexes[ i ] );
 
-                if( temp > 0 ) {
-                    count += temp;
-                    sum += temp * sorted.pointers[ sorted.indexes[ i ] ]->count;
+                    if( temp > 0 ) {
+                        count += temp;
+                        sum += temp * sorted.pointers[ sorted.indexes[ i ] ]->count;
+                    }
                 }
             }
             printf( "Nejprodavanejsi zbozi: prodano %ld kusu\n", sum );
-
         }
         else {
             ErrorMessage();
@@ -326,7 +330,7 @@ void ExtendArr ( list *ref, pointRecord *sorted )
 
     // allocating the record and place to save the name of item
     record *temp = ( record* )malloc( sizeof( record ) );
-    temp->name = ( char* )malloc( sizeof( char ) * ref->nameLen );
+    temp->name = ( char* )malloc( sizeof( char ) * ( ref->nameLen + 1 ) );
     ref->names[ ref->length - 1 ] = temp;
 
     // expanding the sorted array to save this record
