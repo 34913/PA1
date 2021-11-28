@@ -14,10 +14,10 @@
  * @brief keys of input, indicating what does the user want the program to do at the moment
  */
 enum keys {
-    add = '+',
-    all = '#',
-    num = '?',
-    def = ' ',
+    add = '+',  /* adding character */
+    all = '#',  /* printing the list and number of top x items */
+    num = '?',  /* printing only the number of top x items */
+    def = ' ',  /* anything else -> error */
 };
 
 /**
@@ -27,9 +27,9 @@ enum keys {
  */
 typedef struct record_struct
 {
-    char *name;
-    long count;
-    long index;
+    char *name;         /* string name */
+    long count;         /* count of this items bought */
+    long index;         /* index of record in sorted array */
 } record;
 
 /**
@@ -39,9 +39,9 @@ typedef struct record_struct
  */
 typedef struct list_struct
 {
-    record **names;
-    int nameLen;
-    long length;
+    record **names;     /* array of records */
+    int nameLen;        /* specified length of words */
+    long length;        /* array length */
 } list;
 
 /**
@@ -51,11 +51,11 @@ typedef struct list_struct
 typedef struct pointRecord_struct
 {
     record **pointers;
-    long count;
+    long count;         /* array length */
 
-    long sorted;
-    long *indexes;
-    bool newData;
+    long sorted;        /* indicating from which index it is yet sorted */
+    long *indexes;      /* indexes for specified count, fast sorting on sorted array */
+    bool newData;       /* bool value, indicates if there is need for sorting the array */
 } pointRecord;
 
 // prototyping
@@ -86,7 +86,7 @@ void ExtendArr      ( list *arr, pointRecord *sorted );
  * 
  * @param[out] arr   array to be sorted
  * @param[in]  left  left index inclusive
- * @param[in] right right index inclusive
+ * @param[in] right  right index inclusive
  * @return int position of pivot in array
  */
 int Partition       ( record **arr, int left, int right );
@@ -101,10 +101,10 @@ int Partition       ( record **arr, int left, int right );
 void Quicksort      ( record **arr, int left, int right );
 
 /**
- * @brief       Used to swap two pointers of record on given pointers
+ * @brief            Used to swap two pointers of record on given pointers
  * 
- * @param[in] a first pointer to swap with second
- * @param[in] b second pointer to swap with first
+ * @param[in] a      first pointer to swap with second
+ * @param[in] b      second pointer to swap with first
  */
 void Swap           ( record **a, record **b );
 
@@ -174,6 +174,8 @@ int main( void )
                 return EXIT_FAILURE;
             }
 
+            // trying for every item with same length
+            //  -> better than trying it for every item no matter length
             list *ref = &arr[ len - 1 ];
             bool exists = false;
             long i;
@@ -281,6 +283,8 @@ int main( void )
             }
             printf( "Nejprodavanejsi zbozi: prodano %ld kusu\n", sum );
         }
+        // anything else
+        // -> error
         else {
             ErrorMessage();
             ClearArr( arr, &sorted );
