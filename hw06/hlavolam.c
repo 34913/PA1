@@ -20,6 +20,12 @@ typedef struct matrix_struct
 //
 
 /**
+ * @brief           Displays common error message, called when the error in for example data loading occurs
+ * 
+ */
+void ErrorMsg( void );
+
+/**
  * @brief           Clears all given pointers with allocated memory
  * 
  * @param matrix    save struct with array to be freed
@@ -51,6 +57,7 @@ int main( void )
     long realLen = 0;
     if( (realLen = getline( &str, &len, stdin ) ) == -1 ) {
         free( str );
+        ErrorMsg();
         return EXIT_FAILURE;
     }
 
@@ -63,6 +70,7 @@ int main( void )
         realLen = getline( &matrix.arr[ i ].str, &len, stdin );
         if( realLen - 1 != matrix.len ) {
             ClearAll( matrix );
+            ErrorMsg();
             return EXIT_FAILURE;
         }
 
@@ -70,6 +78,7 @@ int main( void )
 
     if( getchar() != EOF ) {
         ClearAll( matrix );
+        ErrorMsg();
         return EXIT_FAILURE;
     }
 
@@ -78,7 +87,10 @@ int main( void )
     return EXIT_SUCCESS;
 }
 
-
+void ErrorMsg( void )
+{
+    printf( "Nespravny vstup.\n" );
+}
 
 void ClearAll( save matrix )
 {
