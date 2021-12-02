@@ -34,7 +34,7 @@ void ClearAll( save matrix );
  * @return true     On success
  * @return false    On failure
  */
-bool Allocate( save matrix );
+bool Allocate( save *matrix );
 
 //
 
@@ -45,20 +45,33 @@ int main( void )
     matrix.len = 0;
 
     char *str = NULL;
-    long len = 0;
+    size_t len = 0;
 
     printf( "Hlavolam:\n" );
-    if( getline( &str, &len, stdin ) == -1 ) {
+    long realLen = 0;
+    if( (realLen = getline( &str, &len, stdin ) ) == -1 ) {
         free( str );
         return EXIT_FAILURE;
     }
 
-    Allocate( matrix );
+    matrix.len = realLen - 1;
+    Allocate( &matrix );
+    strcpy( matrix.arr[ 0 ].str, str );
+    len = realLen;
+    
+    for( long i = 1; i < matrix.len; i++ ) {
+        realLen = getline( &matrix.arr[ i ].str, &len, stdin );
+        if( realLen - 1 != matrix.len ) {
+            ClearAll( matrix );
+            return EXIT_FAILURE;
+        }
 
+    }
 
-
-
-
+    if( getchar() != EOF ) {
+        ClearAll( matrix );
+        return EXIT_FAILURE;
+    }
 
 
 
@@ -75,22 +88,22 @@ void ClearAll( save matrix )
     free( matrix.arr );
 }
 
-bool Allocate( save matrix )
+bool Allocate( save *matrix )
 {
-    matrix.arr = ( record* )malloc( sizeof( record ) * matrix.len );
-    if( !matrix.arr )
+    matrix->arr = ( record* )malloc( sizeof( record ) * matrix->len );
+    if( matrix->arr == NULL)
         return false;
 
-    for( long i = 0; i < matrix.len; i++ ) {
-        matrix.arr[ i ].str = ( char* )malloc( sizeof(char) * matrix.len );
-        if( !matrix.arr[ i ].str) {
+    for( long i = 0; i < matrix->len; i++ ) {
+        matrix->arr[ i ].str = ( char* )malloc( sizeof(char) * ( matrix->len + 1 ) );
+        if( !matrix->arr[ i ].str) {
             for( long y = 0; y < i; y++ )
-                free( matrix.arr[ y ].str );    
+                free( matrix->arr[ y ].str );    
         
-            free( matrix.arr );
+            free( matrix->arr );
             return false;
         }
     }
-    
+
     return true;
 }
