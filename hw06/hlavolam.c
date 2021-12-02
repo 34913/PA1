@@ -61,9 +61,19 @@ int main( void )
         return EXIT_FAILURE;
     }
 
+    // in case of array of size 0x0
+    // one of epected errors
+    if( realLen == 1 ) {
+        free( str );
+        ErrorMsg();
+        return EXIT_FAILURE;
+    }
+
     matrix.len = realLen - 1;
     Allocate( &matrix );
     strcpy( matrix.arr[ 0 ].str, str );
+
+    free( str );
     len = realLen;
     
     for( long i = 1; i < matrix.len; i++ ) {
@@ -81,6 +91,13 @@ int main( void )
         ErrorMsg();
         return EXIT_FAILURE;
     }
+
+    //
+
+
+
+
+
 
 
 
