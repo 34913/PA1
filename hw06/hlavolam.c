@@ -17,6 +17,12 @@ typedef struct matrix_struct
     record *arr;
 } save;
 
+typedef struct sequence_struct
+{
+    record *arr;
+    long len;
+    long allocated;
+} sequence;
 //
 
 /**
@@ -50,11 +56,20 @@ int main( void )
     matrix.arr = NULL;
     matrix.len = 0;
 
+    sequence seq;
+    seq.len = 0;
+    seq.allocated = 0;
+    seq.arr = NULL;
+
+    //
+
     char *str = NULL;
     size_t len = 0;
+    long realLen = 0;
+
+    //
 
     printf( "Hlavolam:\n" );
-    long realLen = 0;
     if( (realLen = getline( &str, &len, stdin ) ) == -1 ) {
         free( str );
         ErrorMsg();
@@ -94,7 +109,17 @@ int main( void )
 
     //
 
+    for( long y = 0; y < matrix.len; y++ ) {
+        for( long x = 0; x < matrix.len; x++ ) {
+            
+            
 
+
+        }
+
+
+
+    }
 
 
 
