@@ -48,6 +48,17 @@ void ClearAll( save matrix );
  */
 bool Allocate( save *matrix );
 
+/**
+ * @brief           Comparing function for Qsort, compares two record, more precisely, strings in them
+ * 
+ * @param r1        record one
+ * @param r2        record two
+ * @return int      < 0 element1 less than element2 | 
+ *                  = 0 element1 equal to element2 | 
+ *                  > 0 element1 greater than element2 | 
+ */
+int RecordCompare( const void *r1, const void *r2 );
+
 //
 
 int main( void )
@@ -112,19 +123,12 @@ int main( void )
     for( long y = 0; y < matrix.len; y++ ) {
         for( long x = 0; x < matrix.len; x++ ) {
             
-            
-
-
         }
-
-
-
     }
 
+    //
 
-
-
-
+    qsort( seq.arr, seq.len, sizeof(record), RecordCompare );
 
     return EXIT_SUCCESS;
 }
@@ -160,4 +164,16 @@ bool Allocate( save *matrix )
     }
 
     return true;
+}
+
+int RecordCompare( const void *r1, const void *r2 )
+{
+    char *str1 = ((record*)r1)->str;
+    char *str2 = ((record*)r2)->str;
+    if( strlen( str1 ) < strlen( str2 ) )
+        return 1;
+    else if( strlen( str1 ) > strlen( str2 ) )
+        return -1;
+    else
+        return strcmp( str1, str2 );
 }
