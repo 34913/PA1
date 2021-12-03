@@ -10,7 +10,7 @@ typedef struct record_struct
     char *str;
 } record;
 
-typedef struct matrix_struct
+typedef struct save_struct
 {
     long len;
     
@@ -23,6 +23,7 @@ typedef struct sequence_struct
     long len;
     long allocated;
 } sequence;
+
 //
 
 /**
@@ -59,6 +60,16 @@ bool Allocate( save *matrix );
  */
 int RecordCompare( const void *r1, const void *r2 );
 
+/**
+ * @brief           Checks if the coordinates are in limits of maximum array based on len in save
+ * 
+ * @param cords     array with coordinates
+ * @param matrix    save instance
+ * @return true     if coordinates are in limits
+ * @return false    if coordinates are not in limits
+ */
+bool InLimits( int cords[ 2 ], save matrix );
+
 //
 
 int main( void )
@@ -77,6 +88,15 @@ int main( void )
     char *str = NULL;
     size_t len = 0;
     long realLen = 0;
+
+    int dirs[ 8 ][ 2 ] =  { {  1,  0 },
+                            {  1, -1 },
+                            {  0, -1 },
+                            { -1, -1 },
+                            { -1,  0 },
+                            { -1,  1 },
+                            {  0,  1 },
+                            {  1,  1 } };
 
     //
 
@@ -120,9 +140,17 @@ int main( void )
 
     //
 
+    char *str = ( char* )malloc( sizeof( char ) * matrix.len );
     for( long y = 0; y < matrix.len; y++ ) {
         for( long x = 0; x < matrix.len; x++ ) {
-            
+            for( int i = 0; i < 8; i++ ) {
+                len = 1;
+                str[ 0 ] = matrix.arr[ y ].str[ x ];
+                long cord[ 2 ] = { x, y };
+
+
+            }
+
         }
     }
 
@@ -176,4 +204,12 @@ int RecordCompare( const void *r1, const void *r2 )
         return -1;
     else
         return strcmp( str1, str2 );
+}
+
+bool InLimits( int cords[ 2 ], save matrix )
+{
+    return ( cords[ 0 ] >= 0
+          && cords[ 0 ] < matrix.len
+          && cords[ 1 ] >= 0
+          && cords[ 1 ] < matrix.len );
 }
