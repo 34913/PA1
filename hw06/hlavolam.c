@@ -78,11 +78,6 @@ int main( void )
     matrix.arr = NULL;
     matrix.len = 0;
 
-    sequence seq;
-    seq.len = 0;
-    seq.allocated = 0;
-    seq.arr = NULL;
-
     //
 
     char *str = NULL;
@@ -140,14 +135,28 @@ int main( void )
 
     //
 
+    sequence seq;
+    seq.len = 0;
+    seq.allocated = 0;
+    seq.arr = NULL;
+
     char *str = ( char* )malloc( sizeof( char ) * matrix.len );
     for( long y = 0; y < matrix.len; y++ ) {
         for( long x = 0; x < matrix.len; x++ ) {
             for( int i = 0; i < 8; i++ ) {
                 len = 1;
                 str[ 0 ] = matrix.arr[ y ].str[ x ];
-                long cord[ 2 ] = { x, y };
+                long cords[ 2 ] = { x, y };
+                
+                cords[ 0 ] += dirs[ i ][ 0 ];
+                cords[ 1 ] += dirs[ i ][ 1 ];
 
+                while( InLimits( cords, matrix ) ) {
+                    str[ len++ ] = matrix.arr[ cords[ 1 ]].str[ cords[ 0 ] ];
+
+                    cords[ 0 ] += dirs[ i ][ 0 ];
+                    cords[ 1 ] += dirs[ i ][ 1 ];
+                }
 
             }
 
@@ -157,6 +166,12 @@ int main( void )
     //
 
     qsort( seq.arr, seq.len, sizeof(record), RecordCompare );
+
+    //
+
+
+
+    //
 
     return EXIT_SUCCESS;
 }
