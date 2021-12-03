@@ -5,6 +5,10 @@
 
 //
 
+#define ADD 10
+
+//
+
 typedef struct record_struct
 {
     char *str;
@@ -36,8 +40,9 @@ void ErrorMsg( void );
  * @brief           Clears all given pointers with allocated memory
  * 
  * @param matrix    save struct with array to be freed
+ * @param seq       sequence struct with array to be freed
  */
-void ClearAll( save matrix );
+void ClearAll( save matrix, sequence seq );
 
 /**
  * @brief           Allocates enough memory to save whole matrix of characters needed from input
@@ -70,6 +75,16 @@ int RecordCompare( const void *r1, const void *r2 );
  */
 bool InLimits( int cords[ 2 ], save matrix );
 
+/**
+ * @brief           Adds a specified record to a sequence
+ * 
+ * @param seq       sequence struct which holds the arrays
+ * @param item      record item to be added in sequence
+ * @return true     if the reallocation success
+ * @return false    if the reallocation fail
+ */
+bool AddRecord( sequence *seq, record item );
+
 //
 
 int main( void )
@@ -83,6 +98,11 @@ int main( void )
     char *str = NULL;
     size_t len = 0;
     long realLen = 0;
+
+    sequence seq;
+    seq.len = 0;
+    seq.allocated = 0;
+    seq.arr = NULL;
 
     int dirs[ 8 ][ 2 ] =  { {  1,  0 },
                             {  1, -1 },
@@ -120,7 +140,7 @@ int main( void )
     for( long i = 1; i < matrix.len; i++ ) {
         realLen = getline( &matrix.arr[ i ].str, &len, stdin );
         if( realLen - 1 != matrix.len ) {
-            ClearAll( matrix );
+            ClearAll( matrix, seq );
             ErrorMsg();
             return EXIT_FAILURE;
         }
@@ -128,17 +148,12 @@ int main( void )
     }
 
     if( getchar() != EOF ) {
-        ClearAll( matrix );
+        ClearAll( matrix, seq );
         ErrorMsg();
         return EXIT_FAILURE;
     }
 
     //
-
-    sequence seq;
-    seq.len = 0;
-    seq.allocated = 0;
-    seq.arr = NULL;
 
     char *str = ( char* )malloc( sizeof( char ) * matrix.len );
     for( long y = 0; y < matrix.len; y++ ) {
@@ -181,12 +196,13 @@ void ErrorMsg( void )
     printf( "Nespravny vstup.\n" );
 }
 
-void ClearAll( save matrix )
+void ClearAll( save matrix, sequence seq )
 {
     for( long i = 0; i < matrix.len; i++ ) {
         free( matrix.arr[i].str );
     }
     free( matrix.arr );
+    free( seq.arr );
 }
 
 bool Allocate( save *matrix )
@@ -227,4 +243,17 @@ bool InLimits( int cords[ 2 ], save matrix )
           && cords[ 0 ] < matrix.len
           && cords[ 1 ] >= 0
           && cords[ 1 ] < matrix.len );
+}
+
+bool AddRecord( sequence *seq, record item )
+{
+    if( seq->allocated == seq->len ) {
+        seq->allocated += ADD;
+        void *help = realloc( seq->arr, sizeof( record ) * seq->allocated );
+
+        if( help == NULL )
+            return false;
+    }
+
+    seq->arr[ seq->len++ ] = item;
 }
