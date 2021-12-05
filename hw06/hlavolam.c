@@ -1,7 +1,8 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <string.h>
+#include <stdio.h>      // standard I/O
+#include <stdlib.h>     // malloc, realloc, free
+#include <stdbool.h>    // boolean logic values
+#include <string.h>     // strings functions
+#include <ctype.h>      // isalpha
 
 //
 
@@ -23,7 +24,7 @@ typedef struct save_struct
 
 typedef struct sequence_struct
 {
-    record *arr;
+    record **arr;
     long len;
     long allocated;
 } sequence;
@@ -73,7 +74,7 @@ int RecordCompare( const void *r1, const void *r2 );
  * @return true     if coordinates are in limits
  * @return false    if coordinates are not in limits
  */
-bool InLimits( int cords[ 2 ], save matrix );
+bool InLimits( long cords[ 2 ], save matrix );
 
 /**
  * @brief           Adds a specified record to a sequence
@@ -83,7 +84,17 @@ bool InLimits( int cords[ 2 ], save matrix );
  * @return true     if the reallocation success
  * @return false    if the reallocation fail
  */
-bool AddRecord( sequence *seq, record item );
+bool AddRecord( sequence *seq, record *item );
+
+/**
+ * @brief           Create item
+ * 
+ * @param item      item where to save the created struct
+ * @param len       length of character to be saved within
+ * @return true     on success
+ * @return false    on failure
+ */
+bool CreateItem( record **item, long len );
 
 //
 
@@ -105,13 +116,13 @@ int main( void )
     seq.arr = NULL;
 
     int dirs[ 8 ][ 2 ] =  { {  1,  0 },
-                            {  1, -1 },
-                            {  0, -1 },
-                            { -1, -1 },
-                            { -1,  0 },
-                            { -1,  1 },
+                            {  1,  1 },
                             {  0,  1 },
-                            {  1,  1 } };
+                            { -1,  1 },
+                            { -1,  0 },
+                            { -1, -1 },
+                            {  0, -1 },
+                            {  1, -1 } };
 
     //
 
@@ -155,36 +166,67 @@ int main( void )
 
     //
 
-    char *str = ( char* )malloc( sizeof( char ) * matrix.len );
+    record *item = NULL;
+    
     for( long y = 0; y < matrix.len; y++ ) {
         for( long x = 0; x < matrix.len; x++ ) {
+            
+            char ch = matrix.arr[ y ].str[ x ];
+            CreateItem( &item, 1 );
+            item->str[ 0 ] = ch;
+            AddRecord( &seq, item );
+
+            printf( "%c\n", ch );
+
             for( int i = 0; i < 8; i++ ) {
                 len = 1;
-                str[ 0 ] = matrix.arr[ y ].str[ x ];
-                long cords[ 2 ] = { x, y };
-                
-                cords[ 0 ] += dirs[ i ][ 0 ];
-                cords[ 1 ] += dirs[ i ][ 1 ];
+                long cords[ 2 ] = { x + dirs[ i ][ 0 ],
+                                    y + dirs[ i ][ 1 ] };
 
                 while( InLimits( cords, matrix ) ) {
-                    str[ len++ ] = matrix.arr[ cords[ 1 ]].str[ cords[ 0 ] ];
+
+                    printf( "%c - %ld %ld\n", matrix.arr[ cords[ 1 ] ].str[ cords[ 0 ] ], 
+                        cords[ 0 ], cords[ 1 ] );
+
+                    CreateItem( &item, len + 1 );
+                    if( len == 1 )
+                        item->str[ 0 ] = ch;
+                    else
+                        for( long l = 0; l < len; l++ )
+                            item->str[ l ] = seq.arr[ seq.len - 1 ]->str[ l ];
+                    item->str[ len ] = matrix.arr[ cords[ 1 ] ].str[ cords[ 0 ] ];
+                    len++;
+                    AddRecord( &seq, item );
 
                     cords[ 0 ] += dirs[ i ][ 0 ];
                     cords[ 1 ] += dirs[ i ][ 1 ];
+
                 }
 
+                printf( "\n" );
             }
 
+            printf( "...\n" );
         }
     }
 
     //
 
-    qsort( seq.arr, seq.len, sizeof(record), RecordCompare );
+    printf( "---\n" );
+    for( long i = 0; i < seq.len; i++ )
+        printf( "%s\n", seq.arr[ i ]->str );
 
     //
 
+    qsort( seq.arr, seq.len, sizeof( record* ), RecordCompare );
 
+    //
+
+    /*
+    printf( "---\n" );
+    for( long i = 0; i < seq.len; i++ )
+        printf( "%s\n", seq.arr[ i ]->str );
+    */
 
     //
 
@@ -200,6 +242,10 @@ void ClearAll( save matrix, sequence seq )
 {
     for( long i = 0; i < matrix.len; i++ ) {
         free( matrix.arr[i].str );
+    }
+    for( long i = 0; i < seq.len; i++ ) {
+        free( seq.arr[ i ]->str );
+        free( seq.arr[ i ] );
     }
     free( matrix.arr );
     free( seq.arr );
@@ -227,8 +273,9 @@ bool Allocate( save *matrix )
 
 int RecordCompare( const void *r1, const void *r2 )
 {
-    char *str1 = ((record*)r1)->str;
-    char *str2 = ((record*)r2)->str;
+    char *str1 = (*( record** )r1)->str;
+    char *str2 = (*( record** )r2)->str;
+
     if( strlen( str1 ) < strlen( str2 ) )
         return 1;
     else if( strlen( str1 ) > strlen( str2 ) )
@@ -237,23 +284,39 @@ int RecordCompare( const void *r1, const void *r2 )
         return strcmp( str1, str2 );
 }
 
-bool InLimits( int cords[ 2 ], save matrix )
+bool InLimits( long cords[ 2 ], save matrix )
 {
     return ( cords[ 0 ] >= 0
-          && cords[ 0 ] < matrix.len
+          && cords[ 0 ] <  matrix.len
           && cords[ 1 ] >= 0
-          && cords[ 1 ] < matrix.len );
+          && cords[ 1 ] <  matrix.len );
 }
 
-bool AddRecord( sequence *seq, record item )
+bool AddRecord( sequence *seq, record *item )
 {
     if( seq->allocated == seq->len ) {
         seq->allocated += ADD;
-        void *help = realloc( seq->arr, sizeof( record ) * seq->allocated );
+        void *help = realloc( seq->arr, sizeof( record* ) * seq->allocated );
 
         if( help == NULL )
             return false;
+        seq->arr = ( record** )help;
     }
 
     seq->arr[ seq->len++ ] = item;
+    return true;
+}
+
+bool CreateItem( record **item, long len )
+{
+    *item = ( record* )malloc( sizeof( record ) );
+    if( item == NULL )
+        return false;
+    (*item)->str = ( char* )malloc( sizeof( char ) * len );
+    if( *item == NULL ) {
+        free( *item );
+        return false;
+    }
+
+    return true;
 }
