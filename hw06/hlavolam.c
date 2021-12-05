@@ -99,38 +99,16 @@ bool CreateItem( record **item, long len );
 
 //
 
-int main( void )
+bool Reading( sequence *seq, save *matrix )
 {
-    save matrix;
-    matrix.arr = NULL;
-    matrix.len = 0;
-
-    //
-
     char *str = NULL;
-    size_t len = 0;
     long realLen = 0;
-
-    sequence seq;
-    seq.len = 0;
-    seq.allocated = 0;
-    seq.arr = NULL;
-
-    int dirs[ 8 ][ 2 ] =  { {  1,  0 },
-                            {  1,  1 },
-                            {  0,  1 },
-                            { -1,  1 },
-                            { -1,  0 },
-                            { -1, -1 },
-                            {  0, -1 },
-                            {  1, -1 } };
-
-    //
+    size_t len = 0;
 
     printf( "Hlavolam:\n" );
     if( (realLen = getline( &str, &len, stdin ) ) == -1 ) {
         free( str );
-        ClearAll( matrix, seq );
+        ClearAll( *matrix, *seq );
         ErrorMsg();
         return EXIT_FAILURE;
     }
@@ -139,63 +117,76 @@ int main( void )
     // one of epected errors
     if( realLen == 1 ) {
         free( str );
-        ClearAll( matrix, seq );
+        ClearAll( *matrix, *seq );
         ErrorMsg();
         return EXIT_FAILURE;
     }
 
-    matrix.len = realLen - 1;
-    Allocate( &matrix );
-    strcpy( matrix.arr[ 0 ], str );
+    matrix->len = realLen - 1;
+    Allocate( matrix );
+    strcpy( matrix->arr[ 0 ], str );
 
     free( str );
     len = realLen;
     
-    for( long i = 1; i < matrix.len; i++ ) {
-        realLen = getline( &matrix.arr[ i ], &len, stdin );
-        if( realLen - 1 != matrix.len ) {
-            ClearAll( matrix, seq );
+    for( long i = 1; i < matrix->len; i++ ) {
+        realLen = getline( &matrix->arr[ i ], &len, stdin );
+        if( realLen - 1 != matrix->len ) {
+            ClearAll( *matrix, *seq );
             ErrorMsg();
             return EXIT_FAILURE;
         }
     }
 
     if( getchar() != EOF ) {
-        ClearAll( matrix, seq );
+        ClearAll( *matrix, *seq );
         ErrorMsg();
         return EXIT_FAILURE;
     }
 
-    //
+    return EXIT_SUCCESS;
+}
 
+void AllPermutations( sequence *seq, save *matrix )
+{
+    const int dirs[ 8 ][ 2 ] =  { {  1,  0 },
+                                  {  1,  1 },
+                                  {  0,  1 },
+                                  { -1,  1 },
+                                  { -1,  0 },
+                                  { -1, -1 },
+                                  {  0, -1 },
+                                  {  1, -1 } };
+
+    long len = 0;
     record *item = NULL;
     
-    for( long y = 0; y < matrix.len; y++ ) {
-        for( long x = 0; x < matrix.len; x++ ) {
+    for( long y = 0; y < matrix->len; y++ ) {
+        for( long x = 0; x < matrix->len; x++ ) {
             
-            char ch = matrix.arr[ y ][ x ];
+            char ch = matrix->arr[ y ][ x ];
             CreateItem( &item, 1 );
             item->str[ 0 ] = ch;
             item->len = 1;
-            AddRecord( &seq, item );
+            AddRecord( seq, item );
 
             for( int i = 0; i < 8; i++ ) {
                 len = 1;
                 long cords[ 2 ] = { x + dirs[ i ][ 0 ],
                                     y + dirs[ i ][ 1 ] };
 
-                while( InLimits( cords, matrix ) ) {
+                while( InLimits( cords, *matrix ) ) {
 
                     CreateItem( &item, len + 1 );
                     if( len == 1 )
                         item->str[ 0 ] = ch;
                     else
                         for( long l = 0; l < len; l++ )
-                            item->str[ l ] = seq.arr[ seq.len - 1 ]->str[ l ];
-                    item->str[ len ] = matrix.arr[ cords[ 1 ] ][ cords[ 0 ] ];
+                            item->str[ l ] = seq->arr[ seq->len - 1 ]->str[ l ];
+                    item->str[ len ] = matrix->arr[ cords[ 1 ] ][ cords[ 0 ] ];
                     len++;
                     item->len = len;
-                    AddRecord( &seq, item );
+                    AddRecord( seq, item );
 
                     cords[ 0 ] += dirs[ i ][ 0 ];
                     cords[ 1 ] += dirs[ i ][ 1 ];
@@ -203,12 +194,83 @@ int main( void )
             }
         }
     }
+}
+
+void Sieve( sequence *seq, sequence *most, save *matrix )
+{
+    qsort( seq->arr, seq->len, sizeof( record* ), RecordCompare );
 
     //
 
-    qsort( seq.arr, seq.len, sizeof( record* ), RecordCompare );
+    record *item = seq->arr[ 0 ];
+    for( long i = 1; i < seq->len; i++ ) {
+        record *tmp = seq->arr[ i ];
+
+        if( tmp->len != item->len ) {
+            if( most->len > 0 )
+                break;
+            else
+                item = seq->arr[ i ];
+        }
+        else if( strncmp( item->str, tmp->str, item->len ) == 0 ) {
+            AddRecord( most, tmp );
+
+            tmp = seq->arr[ ++i ];
+            while( i < seq->len ) {
+                if( item->len != tmp->len || strncmp( item->str, tmp->str, item->len ) != 0 )
+                    break;
+                tmp = seq->arr[ ++i ];
+            }
+            i--;
+        }
+        else
+            item = seq->arr[ i ];
+    }
+}
+
+void Print( sequence *most )
+{
+    if( most->len == 0 )
+        printf( "Zadne opakujici se slovo.\n" );
+    else {
+        printf( "Nejdelsi opakujici se slova:\n" );
+        for( long i = 0; i < most->len; i++ ) {
+            for( long l = 0; l < most->arr[ i ]->len; l++ )
+                printf( "%c", most->arr[ i ]->str[ l ] );
+            printf( "\n" );
+        }
+    }
+}
+
+//
+
+int main( void )
+{
+    save matrix;
+    matrix.arr = NULL;
+    matrix.len = 0;
 
     //
+
+    sequence seq;
+    seq.len = 0;
+    seq.allocated = 0;
+    seq.arr = NULL;
+
+    //
+
+    sequence most;
+    most.arr = NULL;
+    most.allocated = 0;
+    most.len = 0;
+
+    //
+
+    if( Reading( &seq, &matrix ) == EXIT_FAILURE )
+        return EXIT_FAILURE;
+    AllPermutations( &seq, &matrix );
+    Sieve( &seq, &most, &matrix );
+    Print( &most );
 
     //
 
