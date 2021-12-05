@@ -13,13 +13,14 @@
 typedef struct record_struct
 {
     char *str;
+    long len;
 } record;
 
 typedef struct save_struct
 {
     long len;
     
-    record *arr;
+    char **arr;
 } save;
 
 typedef struct sequence_struct
@@ -129,6 +130,7 @@ int main( void )
     printf( "Hlavolam:\n" );
     if( (realLen = getline( &str, &len, stdin ) ) == -1 ) {
         free( str );
+        ClearAll( matrix, seq );
         ErrorMsg();
         return EXIT_FAILURE;
     }
@@ -137,25 +139,25 @@ int main( void )
     // one of epected errors
     if( realLen == 1 ) {
         free( str );
+        ClearAll( matrix, seq );
         ErrorMsg();
         return EXIT_FAILURE;
     }
 
     matrix.len = realLen - 1;
     Allocate( &matrix );
-    strcpy( matrix.arr[ 0 ].str, str );
+    strcpy( matrix.arr[ 0 ], str );
 
     free( str );
     len = realLen;
     
     for( long i = 1; i < matrix.len; i++ ) {
-        realLen = getline( &matrix.arr[ i ].str, &len, stdin );
+        realLen = getline( &matrix.arr[ i ], &len, stdin );
         if( realLen - 1 != matrix.len ) {
             ClearAll( matrix, seq );
             ErrorMsg();
             return EXIT_FAILURE;
         }
-
     }
 
     if( getchar() != EOF ) {
@@ -171,12 +173,11 @@ int main( void )
     for( long y = 0; y < matrix.len; y++ ) {
         for( long x = 0; x < matrix.len; x++ ) {
             
-            char ch = matrix.arr[ y ].str[ x ];
+            char ch = matrix.arr[ y ][ x ];
             CreateItem( &item, 1 );
             item->str[ 0 ] = ch;
+            item->len = 1;
             AddRecord( &seq, item );
-
-            printf( "%c\n", ch );
 
             for( int i = 0; i < 8; i++ ) {
                 len = 1;
@@ -185,36 +186,23 @@ int main( void )
 
                 while( InLimits( cords, matrix ) ) {
 
-                    printf( "%c - %ld %ld\n", matrix.arr[ cords[ 1 ] ].str[ cords[ 0 ] ], 
-                        cords[ 0 ], cords[ 1 ] );
-
                     CreateItem( &item, len + 1 );
                     if( len == 1 )
                         item->str[ 0 ] = ch;
                     else
                         for( long l = 0; l < len; l++ )
                             item->str[ l ] = seq.arr[ seq.len - 1 ]->str[ l ];
-                    item->str[ len ] = matrix.arr[ cords[ 1 ] ].str[ cords[ 0 ] ];
+                    item->str[ len ] = matrix.arr[ cords[ 1 ] ][ cords[ 0 ] ];
                     len++;
+                    item->len = len;
                     AddRecord( &seq, item );
 
                     cords[ 0 ] += dirs[ i ][ 0 ];
                     cords[ 1 ] += dirs[ i ][ 1 ];
-
                 }
-
-                printf( "\n" );
             }
-
-            printf( "...\n" );
         }
     }
-
-    //
-
-    printf( "---\n" );
-    for( long i = 0; i < seq.len; i++ )
-        printf( "%s\n", seq.arr[ i ]->str );
 
     //
 
@@ -222,14 +210,9 @@ int main( void )
 
     //
 
-    /*
-    printf( "---\n" );
-    for( long i = 0; i < seq.len; i++ )
-        printf( "%s\n", seq.arr[ i ]->str );
-    */
-
     //
 
+    ClearAll( matrix, seq );
     return EXIT_SUCCESS;
 }
 
@@ -240,8 +223,9 @@ void ErrorMsg( void )
 
 void ClearAll( save matrix, sequence seq )
 {
-    for( long i = 0; i < matrix.len; i++ ) {
-        free( matrix.arr[i].str );
+    if( matrix.arr != NULL) {
+        for( long i = 0; i < matrix.len; i++ )
+            free( matrix.arr[ i ] );
     }
     for( long i = 0; i < seq.len; i++ ) {
         free( seq.arr[ i ]->str );
@@ -253,19 +237,14 @@ void ClearAll( save matrix, sequence seq )
 
 bool Allocate( save *matrix )
 {
-    matrix->arr = ( record* )malloc( sizeof( record ) * matrix->len );
+    matrix->arr = ( char** )malloc( sizeof( char* ) * matrix->len );
     if( matrix->arr == NULL)
         return false;
 
     for( long i = 0; i < matrix->len; i++ ) {
-        matrix->arr[ i ].str = ( char* )malloc( sizeof(char) * ( matrix->len + 1 ) );
-        if( !matrix->arr[ i ].str) {
-            for( long y = 0; y < i; y++ )
-                free( matrix->arr[ y ].str );    
-        
-            free( matrix->arr );
+        matrix->arr[ i ] = ( char* )malloc( sizeof(char) * ( matrix->len + 1 ) );
+        if( matrix->arr[ i ] == NULL )
             return false;
-        }
     }
 
     return true;
@@ -273,15 +252,15 @@ bool Allocate( save *matrix )
 
 int RecordCompare( const void *r1, const void *r2 )
 {
-    char *str1 = (*( record** )r1)->str;
-    char *str2 = (*( record** )r2)->str;
+    record *record1 = *( record** )r1;
+    record *record2 = *( record** )r2;
 
-    if( strlen( str1 ) < strlen( str2 ) )
+    if( record1->len < record2->len )
         return 1;
-    else if( strlen( str1 ) > strlen( str2 ) )
+    else if( record1->len > record2->len )
         return -1;
     else
-        return strcmp( str1, str2 );
+        return strcmp( record1->str, record2->str );
 }
 
 bool InLimits( long cords[ 2 ], save matrix )
