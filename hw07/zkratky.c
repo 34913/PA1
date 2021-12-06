@@ -1,9 +1,11 @@
 #include <stdio.h>      // standard I/O
 #include <stdlib.h>     // malloc, realloc, free
 #include <stdbool.h>    // boolean true false logic values
+#include <string.h>     // string functions
 
 // using numeric type on all numbers
 #define type long long
+#define ADD 10
 
 //
 
@@ -26,46 +28,70 @@ void PrintError( void );
  * 
  * @param wanted    record struct, wanted char on start
  */
-void ClearAll( record wanted );
+void ClearAll( record wanted, record str );
+
+//
+
+
+bool Init( record *rec )
+{
+    rec->str      = NULL;
+    rec->len      = 0;
+
+    type count;
+    if( ( count = getline( &rec->str, &rec->len, stdin ) ) == -1 )
+        return EXIT_FAILURE;
+    rec->str[ --count ] = '\0';
+    
+    void *help = realloc( rec->str, sizeof( char ) * ( count + 1 ) );
+    if( help == NULL )
+        return EXIT_FAILURE;
+    rec->str = ( char* )help;
+    rec->len = count;
+
+    return EXIT_SUCCESS;
+}
 
 //
 
 int main( void )
 {
-    record wanted;
-    wanted.str      = NULL;
-    wanted.len      = 0;
+    record wanted, str;
 
     //
 
     printf( "Zkratka:\n" );
-    type count = 0;
 
-    if( ( count = getline( &wanted.str, &wanted.len, stdin ) ) == -1 ) {
+    if( Init( &wanted ) ) {
         PrintError();
-        ClearAll( wanted );
+        ClearAll( wanted, str );
         return EXIT_FAILURE;
-    }
-    wanted.str[ count - 1 ] = '\0';
-    wanted.len = count - 1;
+    }   
 
     printf( "Problemy:\n" );
 
     int check;
     char key;
-    while( ( check = scanf( "%c %d ", &key, &count ) ) == 2 ) {
+    type occurs;
+    while( ( check = scanf( "%c %d ", &key, &occurs ) ) == 2 ) {
+
+        if( Init( &str ) ) {
+            PrintError();
+            ClearAll( wanted, str );
+            return EXIT_FAILURE;
+        }   
 
 
 
-
-
+        free( str.str );
     }
 
     //
 
+    ClearAll( wanted, str );
+
     if( check != EOF ) {
         PrintError();
-        ClearAll( wanted );
         return EXIT_FAILURE;
     }
 
@@ -79,8 +105,8 @@ void PrintError( void )
     printf( "Nespravny vstup.\n" );    
 }
 
-void ClearAll( record wanted )
+void ClearAll( record wanted, record str )
 {
-    
     free( wanted.str );
+    free( str.str );
 }
