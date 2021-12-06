@@ -16,10 +16,17 @@ typedef struct record_struct
 //
 
 /**
- * @brief       Prints common error message on stdout
+ * @brief           Prints common error message on stdout
  * 
  */
 void PrintError( void );
+
+/**
+ * @brief           clears memory of all allocated memory on given pointers
+ * 
+ * @param wanted    record struct, wanted char on start
+ */
+void ClearAll( record wanted );
 
 //
 
@@ -36,6 +43,7 @@ int main( void )
 
     if( ( count = getline( &wanted.str, &wanted.len, stdin ) ) == -1 ) {
         PrintError();
+        ClearAll( wanted );
         return EXIT_FAILURE;
     }
     wanted.str[ count - 1 ] = '\0';
@@ -57,6 +65,7 @@ int main( void )
 
     if( check != EOF ) {
         PrintError();
+        ClearAll( wanted );
         return EXIT_FAILURE;
     }
 
@@ -68,4 +77,10 @@ int main( void )
 void PrintError( void )
 {
     printf( "Nespravny vstup.\n" );    
+}
+
+void ClearAll( record wanted )
+{
+    
+    free( wanted.str );
 }
