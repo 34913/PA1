@@ -16,9 +16,24 @@ typedef struct record_struct
     type len;
 } record;
 
-typedef struct
+typedef struct array_struct
 {
-    type *index;    
+    type **arr;
+    type index;
+    type len;
+    type allocated;
+} array;
+
+typedef struct possible_struct
+{
+    type arrIndex;
+
+    array occ;
+
+    type *skip;
+
+    type which;
+
 } possible;
 
 enum keys
@@ -43,9 +58,22 @@ void PrintError( void );
  */
 void ClearAll( record wanted, record str );
 
+/**
+ * @brief           Extends arr in given array structure by specific size given by macro ADD
+ * 
+ * @param occ       array structure to extend by realloc
+ */
+void Extend( array *occ, type len );
+
 //
 
-
+/**
+ * @brief 
+ * 
+ * @param rec 
+ * @return true 
+ * @return false 
+ */
 bool Init( record *rec )
 {
     rec->str      = NULL;
@@ -113,7 +141,23 @@ int main( void )
             str.str[ i ] = tolower( str.str[ i ] );
 
         // possible outcomes
+        possible pos;
+        pos.arrIndex = 1;
         
+        pos.occ.arr         = NULL;
+        pos.occ.index       = 0;
+        pos.occ.len         = 0;
+        pos.occ.allocated   = 0;
+
+        pos.skip            = NULL;
+        pos.which           = 0;
+
+        pos.occ.arr = ( type* )malloc( sizeof( type ) * ( str.len - 2 ) );
+        for( type i = 0; i < str.len - 2; i++ )
+            pos.occ.arr[ i ] = -1;
+
+        
+
 
         free( str.str );
     }
@@ -143,16 +187,14 @@ void ClearAll( record wanted, record str )
     free( str.str );
 }
 
-/*
-void MoveRecord( record *to, record *tmp )
+void Extend( array *occ, type len )
 {
-    to->str = ( char* )malloc( sizeof( char ) * ( count + 1 ) );
-    if( wanted.str == NULL ) {
-        PrintError();
-        ClearAll( wanted );
-        return EXIT_FAILURE;
+    if( occ->allocated == occ->len ) {
+        occ->allocated += 10;
+        void *help = realloc( occ->arr, sizeof( type ) * occ->allocated );
+
+        if( help == NULL )
+            return EXIT_FAILURE;
+        occ->arr = ( type* )help;
     }
-    strcpy( wanted.str, tmp.str );
-    wanted.len = count;
 }
-*/
