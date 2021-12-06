@@ -2,6 +2,7 @@
 #include <stdlib.h>     // malloc, realloc, free
 #include <stdbool.h>    // boolean true false logic values
 #include <string.h>     // string functions
+#include <ctype.h>
 
 // using numeric type on all numbers
 #define type long long
@@ -14,6 +15,18 @@ typedef struct record_struct
     char* str;
     type len;
 } record;
+
+typedef struct
+{
+    type *index;    
+} possible;
+
+enum keys
+{
+    all = '?',
+    counts = '#',
+    def = ' ',
+};
 
 //
 
@@ -68,6 +81,9 @@ int main( void )
         return EXIT_FAILURE;
     }   
 
+    for( type i = 0; i < wanted.len; i++ )
+        wanted.str[ i ] = tolower( wanted.str[ i ] );
+
     printf( "Problemy:\n" );
 
     int check;
@@ -75,13 +91,29 @@ int main( void )
     type occurs;
     while( ( check = scanf( "%c %d ", &key, &occurs ) ) == 2 ) {
 
+        if( ( key != all && key != counts ) || occurs <= 0 ) {
+            PrintError();
+            ClearAll( wanted, str );
+            return EXIT_FAILURE;
+        }
+
         if( Init( &str ) ) {
             PrintError();
             ClearAll( wanted, str );
             return EXIT_FAILURE;
         }   
 
+        if( str.str[ 0 ] != '"' || str.str[ str.len - 1 ] != '"' ) {
+            PrintError();
+            ClearAll( wanted, str );
+            return EXIT_FAILURE;
+        }
 
+        for( type i = 0; i < str.len; i++ )
+            str.str[ i ] = tolower( str.str[ i ] );
+
+        // possible outcomes
+        
 
         free( str.str );
     }
@@ -110,3 +142,17 @@ void ClearAll( record wanted, record str )
     free( wanted.str );
     free( str.str );
 }
+
+/*
+void MoveRecord( record *to, record *tmp )
+{
+    to->str = ( char* )malloc( sizeof( char ) * ( count + 1 ) );
+    if( wanted.str == NULL ) {
+        PrintError();
+        ClearAll( wanted );
+        return EXIT_FAILURE;
+    }
+    strcpy( wanted.str, tmp.str );
+    wanted.len = count;
+}
+*/
