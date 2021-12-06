@@ -42,9 +42,10 @@ void ErrorMsg( void );
  * @brief           Clears all given pointers with allocated memory
  * 
  * @param matrix    save struct with array to be freed
- * @param seq       sequence struct with array to be freed
+ * @param seq       sequence struct seq with array to be freed
+ * @param most      sequence struct most with array to be freed
  */
-void ClearAll( save matrix, sequence seq );
+void ClearAll( save matrix, sequence seq, sequence most );
 
 /**
  * @brief           Allocates enough memory to save whole matrix of characters needed from input
@@ -108,8 +109,6 @@ bool Reading( sequence *seq, save *matrix )
     printf( "Hlavolam:\n" );
     if( (realLen = getline( &str, &len, stdin ) ) == -1 ) {
         free( str );
-        ClearAll( *matrix, *seq );
-        ErrorMsg();
         return EXIT_FAILURE;
     }
 
@@ -117,32 +116,24 @@ bool Reading( sequence *seq, save *matrix )
     // one of epected errors
     if( realLen == 1 ) {
         free( str );
-        ClearAll( *matrix, *seq );
-        ErrorMsg();
         return EXIT_FAILURE;
     }
 
     matrix->len = realLen - 1;
     Allocate( matrix );
-    strcpy( matrix->arr[ 0 ], str );
+    strcpy( matrix->arr[ 0 ], str);
 
     free( str );
     len = realLen;
     
     for( long i = 1; i < matrix->len; i++ ) {
         realLen = getline( &matrix->arr[ i ], &len, stdin );
-        if( realLen - 1 != matrix->len ) {
-            ClearAll( *matrix, *seq );
-            ErrorMsg();
+        if( realLen - 1 != matrix->len )
             return EXIT_FAILURE;
-        }
     }
 
-    if( getchar() != EOF ) {
-        ClearAll( *matrix, *seq );
-        ErrorMsg();
+    if( getchar() != EOF )
         return EXIT_FAILURE;
-    }
 
     return EXIT_SUCCESS;
 }
@@ -196,7 +187,7 @@ void AllPermutations( sequence *seq, save *matrix )
     }
 }
 
-void Sieve( sequence *seq, sequence *most, save *matrix )
+bool Sieve( sequence *seq, sequence *most, save *matrix )
 {
     qsort( seq->arr, seq->len, sizeof( record* ), RecordCompare );
 
@@ -213,7 +204,8 @@ void Sieve( sequence *seq, sequence *most, save *matrix )
                 item = seq->arr[ i ];
         }
         else if( strncmp( item->str, tmp->str, item->len ) == 0 ) {
-            AddRecord( most, tmp );
+            if( !AddRecord( most, tmp ) )
+                return EXIT_FAILURE;
 
             tmp = seq->arr[ ++i ];
             while( i < seq->len ) {
@@ -226,6 +218,7 @@ void Sieve( sequence *seq, sequence *most, save *matrix )
         else
             item = seq->arr[ i ];
     }
+    return EXIT_SUCCESS;
 }
 
 void Print( sequence *most )
@@ -266,15 +259,22 @@ int main( void )
 
     //
 
-    if( Reading( &seq, &matrix ) == EXIT_FAILURE )
+    if( Reading( &seq, &matrix ) == EXIT_FAILURE ) {
+        ClearAll( matrix, seq, most );
+        ErrorMsg();
         return EXIT_FAILURE;
+    }
     AllPermutations( &seq, &matrix );
-    Sieve( &seq, &most, &matrix );
+    if( Sieve( &seq, &most, &matrix ) == EXIT_FAILURE ) {
+        ClearAll( matrix, seq, most );
+        ErrorMsg();
+        return EXIT_FAILURE;
+    }
     Print( &most );
 
     //
 
-    ClearAll( matrix, seq );
+    ClearAll( matrix, seq, most );
     return EXIT_SUCCESS;
 }
 
@@ -283,18 +283,27 @@ void ErrorMsg( void )
     printf( "Nespravny vstup.\n" );
 }
 
-void ClearAll( save matrix, sequence seq )
+void ClearAll( save matrix, sequence seq, sequence most )
 {
     if( matrix.arr != NULL) {
         for( long i = 0; i < matrix.len; i++ )
             free( matrix.arr[ i ] );
     }
+    free( matrix.arr );
+
     for( long i = 0; i < seq.len; i++ ) {
         free( seq.arr[ i ]->str );
         free( seq.arr[ i ] );
     }
-    free( matrix.arr );
     free( seq.arr );
+
+    /*
+    for( long i = 0; i < most.len; i++ ) {
+        free( most.arr[ i ]->str );
+        free( most.arr[ i ] );
+    }
+    */
+    free( most.arr );
 }
 
 bool Allocate( save *matrix )
@@ -304,7 +313,7 @@ bool Allocate( save *matrix )
         return false;
 
     for( long i = 0; i < matrix->len; i++ ) {
-        matrix->arr[ i ] = ( char* )malloc( sizeof(char) * ( matrix->len + 1 ) );
+        matrix->arr[ i ] = ( char* )malloc( sizeof(char) * ( matrix->len + 2 ) );
         if( matrix->arr[ i ] == NULL )
             return false;
     }
@@ -322,7 +331,7 @@ int RecordCompare( const void *r1, const void *r2 )
     else if( record1->len > record2->len )
         return -1;
     else
-        return strcmp( record1->str, record2->str );
+        return strncmp( record1->str, record2->str, record1->len );
 }
 
 bool InLimits( long cords[ 2 ], save matrix )
