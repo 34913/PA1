@@ -60,14 +60,14 @@ enum keys
  * @brief           Prints common error message on stdout
  * 
  */
-void PrintError( void );
+void PrintError ( void );
 
 /**
  * @brief           clears memory of all allocated memory on given pointers
  * 
  * @param wanted    save struct, wanted char on start
  */
-void ClearAll( save wanted, save str );
+void ClearAll   ( save wanted, save str );
 
 /**
  * @brief           Extends given pointer when needed based on size data
@@ -77,7 +77,25 @@ void ClearAll( save wanted, save str );
  * @param size      measures struct, given sizes
  * @return void*    returns the same or extended (when needed) ptr, NULL on failure
  */
-void *Extend( void *ptr, unsigned long so, measures *size );
+void *Extend    ( void *ptr, unsigned long so, measures *size );
+
+/**
+ * @brief           Comparing function for qsort, sorts by numeric index
+ * 
+ * @param r1        record one
+ * @param r2        record two
+ * @return int      -1 on record one index smaller, otherwise 1
+ */
+int CmpByNum    ( const void *r1, const void *r2 );
+
+/**
+ * @brief           Comparing function for qsort, sorts by char ch
+ * 
+ * @param r1        record one
+ * @param r2        record two
+ * @return int      -1 on record one ch smaller, 0 on even, otherwise 1
+ */
+int CmpByAlpha  ( const void *r1, const void *r2 );
 
 //
 
@@ -223,3 +241,26 @@ void *Extend( void *ptr, unsigned long so, measures *size )
     }
     return ptr;
 }
+
+int CmpByNum( const void *r1, const void *r2 )
+{
+    record *record1 = *( record** )r1;
+    record *record2 = *( record** )r2;
+
+    if( record1->index < record2->index )
+        return -1;
+    return 1;
+}
+
+int CmpByAlpha( const void *r1, const void *r2 )
+{
+    record *record1 = *( record** )r1;
+    record *record2 = *( record** )r2;
+
+    if( record1->ch < record2->ch )
+        return -1;
+    else if( record1->ch > record2->ch )
+        return 1;
+    return 0;
+}
+
