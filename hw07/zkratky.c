@@ -10,18 +10,29 @@
 
 //
 
+typedef struct measures_struct
+{
+    type alloc;
+    type len;
+} measures;
+
 typedef struct record_struct
 {
-    char* str;
-    type len;
+    char ch;
+    type index;
 } record;
+
+typedef struct save_struct
+{
+    record *arr;
+    measures size;
+} save;
 
 typedef struct array_struct
 {
     type **arr;
     type index;
-    type len;
-    type allocated;
+    measures size;
 } array;
 
 typedef struct possible_struct
@@ -54,41 +65,51 @@ void PrintError( void );
 /**
  * @brief           clears memory of all allocated memory on given pointers
  * 
- * @param wanted    record struct, wanted char on start
+ * @param wanted    save struct, wanted char on start
  */
-void ClearAll( record wanted, record str );
+void ClearAll( save wanted, save str );
 
 /**
- * @brief           Extends arr in given array structure by specific size given by macro ADD
+ * @brief           Extends given pointer when needed based on size data
  * 
- * @param occ       array structure to extend by realloc
+ * @param ptr       ptr to be expanded
+ * @param so        sizeof object
+ * @param size      measures struct, given sizes
+ * @return void*    returns the same or extended (when needed) ptr, NULL on failure
  */
-void Extend( array *occ, type len );
+void *Extend( void *ptr, unsigned long so, measures *size );
 
 //
 
 /**
- * @brief 
+ * @brief           Initializes work, reading from input
  * 
- * @param rec 
- * @return true 
- * @return false 
+ * @param rec       save struct to save read string in array
+ * @return true     on failure
+ * @return false    on success
  */
-bool Init( record *rec )
+bool Init( save *rec )
 {
-    rec->str      = NULL;
-    rec->len      = 0;
+    rec->arr        = NULL;
+    rec->size.alloc = 0;
+    rec->size.len   = 0;
 
     type count;
-    if( ( count = getline( &rec->str, &rec->len, stdin ) ) == -1 )
+    char ch;
+    while( ( ch = getchar() ) != '\n' && ch != EOF ) {
+        if( ch == '"' )
+            break;
+        rec->arr = ( record* )Extend( (void*)rec->arr, sizeof( record ), &rec->size );
+        if( rec->arr == NULL )
+            return EXIT_FAILURE;
+
+        rec->arr[ rec->size.len - 1 ].ch = ch;
+        rec->arr[ rec->size.len - 1 ].index = rec->size.len - 1;
+    }
+    if ( ch == '\n' || ch == EOF )
         return EXIT_FAILURE;
-    rec->str[ --count ] = '\0';
-    
-    void *help = realloc( rec->str, sizeof( char ) * ( count + 1 ) );
-    if( help == NULL )
+    else if( getchar() != '\n' )
         return EXIT_FAILURE;
-    rec->str = ( char* )help;
-    rec->len = count;
 
     return EXIT_SUCCESS;
 }
@@ -97,7 +118,7 @@ bool Init( record *rec )
 
 int main( void )
 {
-    record wanted, str;
+    save wanted, str;
 
     //
 
@@ -109,8 +130,8 @@ int main( void )
         return EXIT_FAILURE;
     }   
 
-    for( type i = 0; i < wanted.len; i++ )
-        wanted.str[ i ] = tolower( wanted.str[ i ] );
+    for( type i = 0; i < wanted.size.len; i++ )
+        wanted.arr[ i ].ch = tolower( wanted.arr[ i ].ch );
 
     printf( "Problemy:\n" );
 
@@ -125,20 +146,20 @@ int main( void )
             return EXIT_FAILURE;
         }
 
-        if( Init( &str ) ) {
-            PrintError();
-            ClearAll( wanted, str );
-            return EXIT_FAILURE;
-        }   
-
-        if( str.str[ 0 ] != '"' || str.str[ str.len - 1 ] != '"' ) {
+        if( getchar() != '"' ) {
             PrintError();
             ClearAll( wanted, str );
             return EXIT_FAILURE;
         }
 
-        for( type i = 0; i < str.len; i++ )
-            str.str[ i ] = tolower( str.str[ i ] );
+        if( Init( &str ) ) {
+            PrintError();
+            ClearAll( wanted, str );
+            return EXIT_FAILURE;
+        }
+
+        for( type i = 0; i < str.size.len; i++ )
+            str.arr[ i ].ch = tolower( str.arr[ i ].ch );
 
         // possible outcomes
         possible pos;
@@ -146,20 +167,23 @@ int main( void )
         
         pos.occ.arr         = NULL;
         pos.occ.index       = 0;
-        pos.occ.len         = 0;
-        pos.occ.allocated   = 0;
+        pos.occ.size.alloc  = 0;
+        pos.occ.size.len    = 0;
 
         pos.skip            = NULL;
         pos.which           = 0;
 
-        pos.occ.arr = ( type* )malloc( sizeof( type ) * ( str.len - 2 ) );
-        for( type i = 0; i < str.len - 2; i++ )
-            pos.occ.arr[ i ] = -1;
+        pos.occ.arr = ( type* )malloc( sizeof( type ) * wanted.size.len );
+        if( pos.occ.arr == NULL ) {
+            PrintError();
+            ClearAll( wanted, str );
+            return EXIT_FAILURE;
+        }
 
-        
 
-
-        free( str.str );
+        free( str.arr );
+        free( pos.occ.arr );
+        free( pos.skip );
     }
 
     //
@@ -181,20 +205,21 @@ void PrintError( void )
     printf( "Nespravny vstup.\n" );    
 }
 
-void ClearAll( record wanted, record str )
+void ClearAll( save wanted, save str )
 {
-    free( wanted.str );
-    free( str.str );
+    free( wanted.arr );
+    free( str.arr    );
 }
 
-void Extend( array *occ, type len )
+void *Extend( void *ptr, unsigned long so, measures *size )
 {
-    if( occ->allocated == occ->len ) {
-        occ->allocated += 10;
-        void *help = realloc( occ->arr, sizeof( type ) * occ->allocated );
+    if( size->alloc == size->len ) {
+        size->alloc += 10;
+        void *help = realloc( ptr, so * size->alloc );
 
         if( help == NULL )
-            return EXIT_FAILURE;
-        occ->arr = ( type* )help;
+            free( ptr );
+        return help;
     }
+    return ptr;
 }
