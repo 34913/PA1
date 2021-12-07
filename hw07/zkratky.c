@@ -137,6 +137,7 @@ bool Init( save *rec )
 int main( void )
 {
     save wanted, str;
+    save alpha;
 
     //
 
@@ -148,8 +149,20 @@ int main( void )
         return EXIT_FAILURE;
     }   
 
-    for( type i = 0; i < wanted.size.len; i++ )
+    alpha.arr = ( record* )malloc( sizeof( record ) * wanted.size.len );
+    if( alpha.arr == NULL ) {
+        PrintError();
+        ClearAll( wanted, str );
+        return EXIT_FAILURE;
+    }
+    alpha.size.len = wanted.size.len;
+    alpha.size.alloc = alpha.size.len;
+
+    for( type i = 0; i < wanted.size.len; i++ ) {
         wanted.arr[ i ].ch = tolower( wanted.arr[ i ].ch );
+        alpha.arr[ i ].ch = wanted.arr[ i ].ch;
+    }
+    qsort( alpha.arr, alpha.size.len, sizeof( record ), CmpByAlpha );
 
     printf( "Problemy:\n" );
 
@@ -262,5 +275,17 @@ int CmpByAlpha( const void *r1, const void *r2 )
     else if( record1->ch > record2->ch )
         return 1;
     return 0;
+}
+
+bool Eliminate( save wanted, save *str )
+{
+    qsort( str->arr, str->size.len, sizeof( record ), CmpByAlpha );
+
+    //
+
+
+
+    //
+    
 }
 
