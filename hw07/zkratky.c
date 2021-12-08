@@ -20,8 +20,8 @@ typedef struct list_struct
 void Add( list *n, list **after )
 {
     n->after = *after;
-    if(*after != NULL)
-        (*after)->before = n;
+    if( *after != NULL )
+        ( *after )->before = n;
     *after = n;
     n->before = NULL;
 }
@@ -38,21 +38,30 @@ list *Create( char data )
 void Clear( list *l )
 {
     list *d;
+    list *tmp = l->before;
     while( l ) {
         d = l->after;
-        if( !d )
-            break;
         free( l );
         l = d;
     }
+
+    l= tmp;
+    while( l ) {
+        d = l->before;
+        free( l );
+        l = d;
+    }
+
     return;
 }
 
 void Remove( list *l )
 {
-    ( l->after )->before = l->before;
-    ( l->before )->after = l->after;
-    free(l);
+    if( l->after != NULL )
+        ( l->after )->before = l->before;
+    if( l->before != NULL )
+        ( l->before )->after = l->after;
+    free( l );
 }
 
 void Insert( list* where, list* item )
@@ -129,6 +138,16 @@ void *Extend    ( void *ptr, unsigned long so, measures *size );
  */
 int CmpByAlpha  ( const void *r1, const void *r2 );
 
+/**
+ * @brief           Removes not needed characters from list in str save
+ * 
+ * @param wanted    wanted save with characters needed
+ * @param str       str save with characters from input
+ * @return true     on failure
+ * @return false    on success
+ */
+bool Eliminate( save wanted, save *str );
+
 //
 
 /**
@@ -169,7 +188,7 @@ bool Init( save *rec, bool quot )
             return EXIT_FAILURE;
     }
 
-    rec->start = rec->arr[ rec->size.len - 1 ];
+    rec->start = rec->arr[ 0 ];
 
     qsort( rec->arr, rec->size.len, sizeof( list* ), CmpByAlpha );
 
@@ -225,9 +244,13 @@ int main( void )
 
         pos.arr = ( list*** )malloc( sizeof( list** ) * wanted.size.len );
 
+        Eliminate( wanted, &str );
+        
 
 
         free( pos.arr );
+        Clear( str.start );
+        free( str.arr);
     }
 
     //
@@ -252,7 +275,8 @@ void PrintError( void )
 void ClearAll( save wanted, save str )
 {
     free( wanted.arr );
-    free( str.arr    );
+    Clear( wanted.start );
+    //free( str.arr );
 }
 
 void *Extend( void *ptr, unsigned long so, measures *size )
@@ -280,14 +304,39 @@ int CmpByAlpha( const void *r1, const void *r2 )
 
 bool Eliminate( save wanted, save *str )
 {
-    qsort( str->arr, str->size.len, sizeof( list* ), CmpByAlpha );
+    type wIndex = 0;
 
-    //
+    type count = 0;
+    type i = 0;
+    for( ; i < str->size.len; i++ )
+        if( str->arr[ i ]->data != ' ' )
+            break;
+    for( ; i < str->size.len; i++ ) {
+        list *record = str->arr[ i ];
 
+        if( wanted.arr[ wIndex ]->data < record->data ) {
+            if( count == 0 ) {
+                printf("\nasasd\n");
+                return EXIT_FAILURE;
+            }
 
+            if( ++wIndex == wanted.size.len )
+                break;
+            count = 0;
+        }
+
+        if( record->data != wanted.arr[ wIndex ]->data ) {
+            if( str->start == record )
+                str->start = str->start->after;
+            Remove( record );
+        }
+        else
+            count++;
+    }
+    for( ; i < str->size.len; i++ )
+        Remove( str->arr[ i ] );
 
     //
 
     return true;
 }
-
