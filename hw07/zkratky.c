@@ -10,41 +10,82 @@
 
 //
 
+typedef struct list_struct
+{
+    char data;
+    struct list_struct *after;
+    struct list_struct *before;
+} list;
+
+void Add( list *n, list **after )
+{
+    n->after = *after;
+    if(*after != NULL)
+        (*after)->before = n;
+    *after = n;
+    n->before = NULL;
+}
+
+list *Create( char data )
+{
+    list *n = ( list* )malloc( sizeof( list ) );
+    n->after = NULL;
+    n->before = NULL;
+    n->data = data;
+    return n;
+}
+
+void Clear( list *l )
+{
+    list *d;
+    while( l ) {
+        d = l->after;
+        if( !d )
+            break;
+        free( l );
+        l = d;
+    }
+    return;
+}
+
+void Remove( list *l )
+{
+    ( l->after )->before = l->before;
+    ( l->before )->after = l->after;
+    free(l);
+}
+
+void Insert( list* where, list* item )
+{
+    item->before = where->before;
+    ( where->before )->after = item;
+    where->before = item;
+    item->after = where;
+
+    return;
+}
+
+//
+
 typedef struct measures_struct
 {
     type alloc;
     type len;
 } measures;
 
-typedef struct record_struct
-{
-    char ch;
-    type index;
-} record;
-
 typedef struct save_struct
 {
-    record *arr;
+    list **arr;
     measures size;
-} save;
 
-typedef struct array_struct
-{
-    type **arr;
-    type index;
-    measures size;
-} array;
+    list *start;
+} save;
 
 typedef struct possible_struct
 {
-    type arrIndex;
-
-    array occ;
-
-    type *skip;
-
-    type which;
-
+    // array with all upper letters to be located
+    list ***arr;
+    measures size;
 } possible;
 
 enum keys
@@ -80,15 +121,6 @@ void ClearAll   ( save wanted, save str );
 void *Extend    ( void *ptr, unsigned long so, measures *size );
 
 /**
- * @brief           Comparing function for qsort, sorts by numeric index
- * 
- * @param r1        record one
- * @param r2        record two
- * @return int      -1 on record one index smaller, otherwise 1
- */
-int CmpByNum    ( const void *r1, const void *r2 );
-
-/**
  * @brief           Comparing function for qsort, sorts by char ch
  * 
  * @param r1        record one
@@ -106,28 +138,40 @@ int CmpByAlpha  ( const void *r1, const void *r2 );
  * @return true     on failure
  * @return false    on success
  */
-bool Init( save *rec )
+bool Init( save *rec, bool quot )
 {
     rec->arr        = NULL;
     rec->size.alloc = 0;
     rec->size.len   = 0;
 
-    type count;
+    rec->start      = NULL;
+
     char ch;
     while( ( ch = getchar() ) != '\n' && ch != EOF ) {
         if( ch == '"' )
             break;
-        rec->arr = ( record* )Extend( (void*)rec->arr, sizeof( record ), &rec->size );
+        ch = tolower( ch );
+
+        list *n = Create( ch );
+        Add( n, &rec->start );
+        rec->arr = ( list** )Extend( (void*)rec->arr, sizeof( list* ), &rec->size );
         if( rec->arr == NULL )
             return EXIT_FAILURE;
 
-        rec->arr[ rec->size.len - 1 ].ch = ch;
-        rec->arr[ rec->size.len - 1 ].index = rec->size.len - 1;
+        rec->arr[ ++rec->size.len - 1 ] = n;
     }
-    if ( ch == '\n' || ch == EOF )
+    if ( ch == EOF )
         return EXIT_FAILURE;
-    else if( getchar() != '\n' )
-        return EXIT_FAILURE;
+    else if( quot ) {
+        if ( ch == '\n' )
+            return EXIT_FAILURE;
+        else if( getchar() != '\n' )
+            return EXIT_FAILURE;
+    }
+
+    rec->start = rec->arr[ rec->size.len - 1 ];
+
+    qsort( rec->arr, rec->size.len, sizeof( list* ), CmpByAlpha );
 
     return EXIT_SUCCESS;
 }
@@ -137,39 +181,29 @@ bool Init( save *rec )
 int main( void )
 {
     save wanted, str;
-    save alpha;
+
+    // possible outcomes
+    possible pos;
+    pos.arr         = NULL;
+    pos.size.alloc  = 0;
+    pos.size.len    = 0;
 
     //
 
     printf( "Zkratka:\n" );
 
-    if( Init( &wanted ) ) {
+    if( Init( &wanted, false ) ) {
         PrintError();
         ClearAll( wanted, str );
         return EXIT_FAILURE;
     }   
-
-    alpha.arr = ( record* )malloc( sizeof( record ) * wanted.size.len );
-    if( alpha.arr == NULL ) {
-        PrintError();
-        ClearAll( wanted, str );
-        return EXIT_FAILURE;
-    }
-    alpha.size.len = wanted.size.len;
-    alpha.size.alloc = alpha.size.len;
-
-    for( type i = 0; i < wanted.size.len; i++ ) {
-        wanted.arr[ i ].ch = tolower( wanted.arr[ i ].ch );
-        alpha.arr[ i ].ch = wanted.arr[ i ].ch;
-    }
-    qsort( alpha.arr, alpha.size.len, sizeof( record ), CmpByAlpha );
-
+  
     printf( "Problemy:\n" );
 
     int check;
     char key;
     type occurs;
-    while( ( check = scanf( "%c %d ", &key, &occurs ) ) == 2 ) {
+    while( ( check = scanf( "%c %lld ", &key, &occurs ) ) == 2 ) {
 
         if( ( key != all && key != counts ) || occurs <= 0 ) {
             PrintError();
@@ -183,38 +217,17 @@ int main( void )
             return EXIT_FAILURE;
         }
 
-        if( Init( &str ) ) {
+        if( Init( &str, true ) ) {
             PrintError();
             ClearAll( wanted, str );
             return EXIT_FAILURE;
         }
 
-        for( type i = 0; i < str.size.len; i++ )
-            str.arr[ i ].ch = tolower( str.arr[ i ].ch );
-
-        // possible outcomes
-        possible pos;
-        pos.arrIndex = 1;
-        
-        pos.occ.arr         = NULL;
-        pos.occ.index       = 0;
-        pos.occ.size.alloc  = 0;
-        pos.occ.size.len    = 0;
-
-        pos.skip            = NULL;
-        pos.which           = 0;
-
-        pos.occ.arr = ( type* )malloc( sizeof( type ) * wanted.size.len );
-        if( pos.occ.arr == NULL ) {
-            PrintError();
-            ClearAll( wanted, str );
-            return EXIT_FAILURE;
-        }
+        pos.arr = ( list*** )malloc( sizeof( list** ) * wanted.size.len );
 
 
-        free( str.arr );
-        free( pos.occ.arr );
-        free( pos.skip );
+
+        free( pos.arr );
     }
 
     //
@@ -255,37 +268,26 @@ void *Extend( void *ptr, unsigned long so, measures *size )
     return ptr;
 }
 
-int CmpByNum( const void *r1, const void *r2 )
+int CmpByAlpha( const void *r1, const void *r2 )
 {
-    record *record1 = *( record** )r1;
-    record *record2 = *( record** )r2;
+    list *record1 = *( list** )r1;
+    list *record2 = *( list** )r2;
 
-    if( record1->index < record2->index )
+    if( record1->data < record2->data )
         return -1;
     return 1;
 }
 
-int CmpByAlpha( const void *r1, const void *r2 )
-{
-    record *record1 = *( record** )r1;
-    record *record2 = *( record** )r2;
-
-    if( record1->ch < record2->ch )
-        return -1;
-    else if( record1->ch > record2->ch )
-        return 1;
-    return 0;
-}
-
 bool Eliminate( save wanted, save *str )
 {
-    qsort( str->arr, str->size.len, sizeof( record ), CmpByAlpha );
+    qsort( str->arr, str->size.len, sizeof( list* ), CmpByAlpha );
 
     //
 
 
 
     //
-    
+
+    return true;
 }
 
