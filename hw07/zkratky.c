@@ -7,6 +7,7 @@
 // using numeric type on all numbers
 #define type long long
 #define ADD 10
+#define DELIMETER ' '
 
 //
 
@@ -102,6 +103,7 @@ typedef struct possible_struct
 {
     list** arr;
     type index;
+    type occurs;
 
     list *ptr;
     list *searching;
@@ -111,6 +113,7 @@ typedef struct record_struct
 {
     type index;
     type max;
+
     type occurs;
 
     possible **arr;
@@ -346,6 +349,7 @@ int main( void )
         pos->index          = 0;
         pos->ptr            = str.arr[ 0 ];
         pos->searching      = wanted.start;
+        pos->occurs         = 0;
 
         rec.size.alloc      = 1;
         rec.size.len        = 1;
@@ -356,9 +360,11 @@ int main( void )
             return EXIT_FAILURE;
         }
         rec.arr[ 0 ]        = pos;
+        
         rec.compSize.alloc  = 0;
         rec.compSize.len    = 0;
         rec.comp            = NULL;
+        
         rec.max             = wanted.size.len;
         rec.index           = 0;
         rec.occurs          = occurs;
@@ -375,7 +381,7 @@ int main( void )
 
         //
 
-
+        PrintOut( &rec, &str, key );
 
         //
 
@@ -389,6 +395,7 @@ int main( void )
             free( rec.arr[ i ] );
         }
         free( rec.arr );
+        free( rec.comp );
 
         rec.arr         = NULL;
         str.sorted      = NULL;
@@ -417,8 +424,11 @@ void PrintError( void )
 void ClearAll( save wanted, save str, record rec )
 {
     free( wanted.sorted );
+    if( wanted.arr != NULL ) {
+        for( type i = 0; i < wanted.size.len; i++ )
+            free( wanted.arr[ i ] );
+    }
     free( wanted.arr );
-    Clear( wanted.start );
 
     free( str.sorted );
     if( str.arr != NULL ) {
@@ -501,7 +511,11 @@ bool Recursion( record *rec )
 {
     possible *pos = rec->arr[ rec->index ];
     
-    if( pos->searching == NULL ) {
+    if( pos->occurs == rec->occurs + 1 ) {
+        rec->index ++;
+        return EXIT_SUCCESS;
+    }
+    else if( pos->searching == NULL ) {
         rec->comp = ( possible** )Extend( rec->comp, sizeof( possible* ), &rec->compSize );
         if( rec->comp == NULL )
             return EXIT_FAILURE;
@@ -509,13 +523,13 @@ bool Recursion( record *rec )
         rec->index ++;
         return EXIT_SUCCESS;
     }
-    if( pos->ptr == NULL ) {
+    else if( pos->ptr == NULL ) {
         rec->index ++;
         return EXIT_SUCCESS;
     }
-
-    if( pos->ptr->data == ' ' ) {
+    else if( pos->ptr->data == DELIMETER ) {
         pos->ptr = pos->ptr->before;
+        pos->occurs = 0;
         return EXIT_SUCCESS;
     }
 
@@ -535,6 +549,7 @@ bool Recursion( record *rec )
         newPos->ptr = pos->ptr->before;
         newPos->searching = pos->searching->before;
         newPos->index = pos->index + 1;
+        newPos->occurs = pos->occurs + 1;
 
         rec->arr = ( possible** )Extend( rec->arr, sizeof( possible* ), &rec->size );
         if( rec->arr == NULL )
