@@ -55,12 +55,17 @@ void Clear( list *l )
     return;
 }
 
-void Remove( list *l )
+void RemoveDontFree( list *l ) 
 {
     if( l->after != NULL )
         ( l->after )->before = l->before;
     if( l->before != NULL )
         ( l->before )->after = l->after;
+}
+
+void Remove( list *l )
+{
+    RemoveDontFree( l );
     free( l );
 }
 
@@ -85,9 +90,12 @@ typedef struct measures_struct
 typedef struct save_struct
 {
     list **arr;
+    list **sorted;
+
     measures size;
 
     list *start;
+    list *need;
 } save;
 
 typedef struct possible_struct
@@ -102,10 +110,14 @@ typedef struct possible_struct
 typedef struct record_struct
 {
     type index;
-    measures size;
     type max;
     type occurs;
+
     possible **arr;
+    measures size;
+
+    possible **comp;
+    measures compSize;
 } record;
 
 enum keys
@@ -182,6 +194,7 @@ bool Recursion( record *rec );
  */
 bool Init( save *rec, bool quot )
 {
+    rec->sorted     = NULL;
     rec->arr        = NULL;
     rec->size.alloc = 0;
     rec->size.len   = 0;
@@ -196,11 +209,25 @@ bool Init( save *rec, bool quot )
 
         list *n = Create( ch );
         Add( n, &rec->start );
-        rec->arr = ( list** )Extend( (void*)rec->arr, sizeof( list* ), &rec->size );
-        if( rec->arr == NULL )
-            return EXIT_FAILURE;
 
-        rec->arr[ rec->size.len ++ ] = n;
+        measures *size = &rec->size;
+        if( size->alloc == size->len ) {
+            size->alloc += 10;
+            unsigned long so = sizeof( list* );
+
+            void *help1 = realloc( rec->arr, so * size->alloc );
+            void *help2 = realloc( rec->sorted, so * size->alloc );
+            
+            if( help1 == NULL || help2 == NULL )
+                return EXIT_FAILURE;
+
+            rec->arr = ( list**) help1;
+            rec->sorted = ( list** )help2;
+        }
+
+        rec->sorted[ size->len ] = n;
+        rec->arr[ size->len ] = n;
+        size->len ++; 
     }
     if ( ch == EOF )
         return EXIT_FAILURE;
@@ -211,9 +238,9 @@ bool Init( save *rec, bool quot )
             return EXIT_FAILURE;
     }
 
-    rec->start = rec->arr[ 0 ];
+    rec->start = rec->sorted[ 0 ];
 
-    qsort( rec->arr, rec->size.len, sizeof( list* ), CmpByAlpha );
+    qsort( rec->sorted, rec->size.len, sizeof( list* ), CmpByAlpha );
 
     return EXIT_SUCCESS;
 }
@@ -223,17 +250,13 @@ bool Init( save *rec, bool quot )
 int main( void )
 {
     save wanted, str;
+    str.sorted      = NULL;
     str.arr         = NULL;
     str.start       = NULL;
 
-    list* backup    = NULL;
-
     record rec;
     rec.arr         = NULL;
-    rec.size.alloc  = 0;
-    rec.size.len    = 0;
-    rec.index       = 0;
-    rec.max         = 0;
+    rec.comp        = NULL;
 
     //
 
@@ -270,46 +293,72 @@ int main( void )
             return EXIT_FAILURE;
         }
 
-        backup = wanted.start;
         Eliminate( wanted, &str );
 
         //
 
-        possible *pos   = ( possible* )malloc( sizeof( possible ) );
+        possible *pos       = ( possible* )malloc( sizeof( possible ) );
         if( pos == NULL ) {
             ClearAll( wanted, str, rec );
             PrintError();
             return EXIT_FAILURE;
         }
-        pos->arr        = ( list** )malloc( sizeof( list* ) * wanted.size.len );
+        pos->arr            = ( list** )malloc( sizeof( list* ) * wanted.size.len );
         if( pos->arr == NULL ) {
             ClearAll( wanted, str, rec );
             PrintError();
             return EXIT_FAILURE;
         }
-        pos->index       = 0;
-        pos->ptr         = str.start;
-        pos->searching   = wanted.start;
+        pos->index          = 0;
+        pos->ptr            = str.arr[ 0 ];
+        pos->searching      = wanted.start;
 
-        rec.size.alloc  = 1;
-        rec.size.len    = 1;
-        rec.arr         = ( possible** )malloc( sizeof( possible* ) );
+        rec.size.alloc      = 1;
+        rec.size.len        = 1;
+        rec.arr             = ( possible** )malloc( sizeof( possible* ) );
         if( rec.arr == NULL ) {
             ClearAll( wanted, str, rec );
             PrintError();
             return EXIT_FAILURE;
         }
-        rec.arr[ 0 ]    = pos;
-        rec.max         = wanted.size.len;
-        rec.index       = 0;
-        rec.occurs      = occurs;
+        rec.arr[ 0 ]        = pos;
+        rec.compSize.alloc  = 0;
+        rec.compSize.len    = 0;
+        rec.comp            = NULL;
+        rec.max             = wanted.size.len;
+        rec.index           = 0;
+        rec.occurs          = occurs;
 
         //
 
-        while( rec.index != rec.size.len )
-            Recursion( &rec );
+        while( rec.index != rec.size.len ) {
+            if( Recursion( &rec ) ) {
+                PrintError();
+                ClearAll( wanted, str, rec );
+                return EXIT_FAILURE;
+            }
+        }
+
+        //
 
         
+
+        //
+
+        free( str.sorted );
+        for( type i = 0; i < str.size.len; i++ )
+            free( str.arr[ i ] );
+        free( str.arr );
+
+        for( type i = 0; i < rec.size.len; i++ ) {
+            free( rec.arr[ i ]->arr );
+            free( rec.arr[ i ] );
+        }
+        free( rec.arr );
+
+        rec.arr         = NULL;
+        str.sorted      = NULL;
+        str.arr         = NULL;
     }
 
     //
@@ -333,15 +382,22 @@ void PrintError( void )
 
 void ClearAll( save wanted, save str, record rec )
 {
+    free( wanted.sorted );
     free( wanted.arr );
     Clear( wanted.start );
 
+    free( str.sorted );
+    if( str.arr != NULL ) {
+        for( type i = 0; i < str.size.len; i++ )
+            free( str.arr[ i ] );
+    }
     free( str.arr );
-    Clear( str.start );
 
-    for( type i = 0; i < rec.size.len; i++ ) {
-        free( rec.arr[ i ]->arr );
-        free( rec.arr[ i ] );
+    if( rec.arr != NULL ) {
+        for( type i = 0; i < rec.size.len; i++ ) {
+            free( rec.arr[ i ]->arr );
+            free( rec.arr[ i ] );
+        }
     }
     free( rec.arr );
 }
@@ -376,12 +432,12 @@ bool Eliminate( save wanted, save *str )
     type count = 0;
     type i = 0;
     for( ; i < str->size.len; i++ )
-        if( str->arr[ i ]->data != ' ' )
+        if( str->sorted[ i ]->data != ' ' )
             break;
     for( ; i < str->size.len; i++ ) {
-        list *record = str->arr[ i ];
+        list *record = str->sorted[ i ];
 
-        if( wanted.arr[ wIndex ]->data < record->data ) {
+        if( wanted.sorted[ wIndex ]->data < record->data ) {
             if( count == 0 )
                 return EXIT_FAILURE;
 
@@ -390,16 +446,17 @@ bool Eliminate( save wanted, save *str )
             count = 0;
         }
 
-        if( record->data != wanted.arr[ wIndex ]->data ) {
+        if( record->data != wanted.sorted[ wIndex ]->data ) {
             if( str->start == record )
                 str->start = str->start->after;
-            Remove( record );
+            RemoveDontFree( record );
         }
-        else
+        else {
             count++;
+        }
     }
     for( ; i < str->size.len; i++ )
-        Remove( str->arr[ i ] );
+        RemoveDontFree( str->sorted[ i ] );
 
     //
 
@@ -409,7 +466,16 @@ bool Eliminate( save wanted, save *str )
 bool Recursion( record *rec )
 {
     possible *pos = rec->arr[ rec->index ];
-    if( pos->searching == NULL || pos->ptr == NULL ) {
+    
+    if( pos->searching == NULL ) {
+        rec->comp = ( possible** )Extend( rec->comp, sizeof( possible* ), &rec->compSize );
+        if( rec->comp == NULL )
+            return EXIT_FAILURE;
+        rec->comp[ rec->compSize.len ++ ] = pos;
+        rec->index ++;
+        return EXIT_SUCCESS;
+    }
+    if( pos->ptr == NULL ) {
         rec->index ++;
         return EXIT_SUCCESS;
     }
