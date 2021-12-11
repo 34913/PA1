@@ -173,7 +173,7 @@ int CmpByAlpha  ( const void *r1, const void *r2 );
  * @return true     on failure
  * @return false    on success
  */
-bool Eliminate( save wanted, save *str );
+bool Eliminate  ( save wanted, save *str );
 
 /**
  * @brief           Function to find and save all possible outcomes, 
@@ -184,7 +184,7 @@ bool Eliminate( save wanted, save *str );
  * @return true     on failure
  * @return false    on success
  */
-bool Recursion( record *rec );
+bool Recursion  ( record *rec );
 
 //
 
@@ -195,7 +195,7 @@ bool Recursion( record *rec );
  * @return true     on failure
  * @return false    on success
  */
-bool Init( save *rec, bool quot )
+bool Init       ( save *rec, bool quot )
 {
     rec->sorted     = NULL;
     rec->arr        = NULL;
@@ -208,6 +208,8 @@ bool Init( save *rec, bool quot )
     while( ( ch = getchar() ) != '\n' && ch != EOF ) {
         if( ch == '"' )
             break;
+        if( !quot && islower( ch ) )
+            return EXIT_FAILURE;
         ch = tolower( ch );
 
         list *n = Create( ch );
@@ -255,7 +257,7 @@ bool Init( save *rec, bool quot )
  * @param str       save str, with originaly loaded string
  * @param key       key from input, determines which output user wants
  */
-void PrintOut( record *rec, save *str, char key )
+void PrintOut   ( record *rec, save *str, char key )
 {
     if( rec->compSize.len > 0 && key == all ) {
         for( type i = 0; i < rec->max; i++ )
@@ -280,6 +282,89 @@ void PrintOut( record *rec, save *str, char key )
     }
 
     printf( "%lld\n", rec->compSize.len );
+}
+
+
+bool Cycle      ( save *wanted, save *str, record *rec )
+{
+    int check;
+    char key;
+    type occurs;
+    bool once = false;
+
+    while( ( check = scanf( "%c %lld ", &key, &occurs ) ) == 2 ) {
+        once = true;
+
+        if( ( key != all && key != counts ) || occurs <= 0 )
+            return EXIT_FAILURE;
+
+        if( getchar() != '"' )
+            return EXIT_FAILURE;
+
+        if( Init( str, true ) )
+            return EXIT_FAILURE;
+
+        Eliminate( *wanted, str );
+
+        //
+
+        possible *pos       = ( possible* )malloc( sizeof( possible ) );
+        if( pos == NULL )
+            return EXIT_FAILURE;
+        pos->arr            = ( list** )malloc( sizeof( list* ) * wanted->size.len );
+        if( pos->arr == NULL )
+            return EXIT_FAILURE;
+        pos->index          = 0;
+        pos->ptr            = str->arr[ 0 ];
+        pos->searching      = wanted->start;
+        pos->occurs         = 0;
+
+        rec->size.alloc      = 1;
+        rec->size.len        = 1;
+        rec->arr             = ( possible** )malloc( sizeof( possible* ) );
+        if( rec->arr == NULL )
+            return EXIT_FAILURE;
+        rec->arr[ 0 ]        = pos;
+        
+        rec->compSize.alloc  = 0;
+        rec->compSize.len    = 0;
+        rec->comp            = NULL;
+        
+        rec->max             = wanted->size.len;
+        rec->index           = 0;
+        rec->occurs          = occurs;
+
+        //
+
+        while( rec->index != rec->size.len ) {
+            if( Recursion( rec ) )
+                return EXIT_FAILURE;
+        }
+        PrintOut( rec, str, key );
+
+        //
+
+        free( str->sorted );
+        for( type i = 0; i < str->size.len; i++ )
+            free( str->arr[ i ] );
+        free( str->arr );
+
+        for( type i = 0; i < rec->size.len; i++ ) {
+            free( rec->arr[ i ]->arr );
+            free( rec->arr[ i ] );
+        }
+        free( rec->arr );
+        free( rec->comp );
+
+        rec->arr         = NULL;
+        str->sorted      = NULL;
+        str->arr         = NULL;
+    }
+
+    if( check != EOF || !once )
+        return EXIT_FAILURE;
+
+    return EXIT_SUCCESS;
 }
 
 //
@@ -307,109 +392,15 @@ int main( void )
 
     printf( "Problemy:\n" );
 
-    int check;
-    char key;
-    type occurs;
-    while( ( check = scanf( "%c %lld ", &key, &occurs ) ) == 2 ) {
-
-        if( ( key != all && key != counts ) || occurs <= 0 ) {
-            PrintError();
-            ClearAll( wanted, str, rec );
-            return EXIT_FAILURE;
-        }
-
-        if( getchar() != '"' ) {
-            PrintError();
-            ClearAll( wanted, str, rec );
-            return EXIT_FAILURE;
-        }
-
-        if( Init( &str, true ) ) {
-            PrintError();
-            ClearAll( wanted, str, rec );
-            return EXIT_FAILURE;
-        }
-
-        Eliminate( wanted, &str );
-
-        //
-
-        possible *pos       = ( possible* )malloc( sizeof( possible ) );
-        if( pos == NULL ) {
-            ClearAll( wanted, str, rec );
-            PrintError();
-            return EXIT_FAILURE;
-        }
-        pos->arr            = ( list** )malloc( sizeof( list* ) * wanted.size.len );
-        if( pos->arr == NULL ) {
-            ClearAll( wanted, str, rec );
-            PrintError();
-            return EXIT_FAILURE;
-        }
-        pos->index          = 0;
-        pos->ptr            = str.arr[ 0 ];
-        pos->searching      = wanted.start;
-        pos->occurs         = 0;
-
-        rec.size.alloc      = 1;
-        rec.size.len        = 1;
-        rec.arr             = ( possible** )malloc( sizeof( possible* ) );
-        if( rec.arr == NULL ) {
-            ClearAll( wanted, str, rec );
-            PrintError();
-            return EXIT_FAILURE;
-        }
-        rec.arr[ 0 ]        = pos;
-        
-        rec.compSize.alloc  = 0;
-        rec.compSize.len    = 0;
-        rec.comp            = NULL;
-        
-        rec.max             = wanted.size.len;
-        rec.index           = 0;
-        rec.occurs          = occurs;
-
-        //
-
-        while( rec.index != rec.size.len ) {
-            if( Recursion( &rec ) ) {
-                PrintError();
-                ClearAll( wanted, str, rec );
-                return EXIT_FAILURE;
-            }
-        }
-
-        //
-
-        PrintOut( &rec, &str, key );
-
-        //
-
-        free( str.sorted );
-        for( type i = 0; i < str.size.len; i++ )
-            free( str.arr[ i ] );
-        free( str.arr );
-
-        for( type i = 0; i < rec.size.len; i++ ) {
-            free( rec.arr[ i ]->arr );
-            free( rec.arr[ i ] );
-        }
-        free( rec.arr );
-        free( rec.comp );
-
-        rec.arr         = NULL;
-        str.sorted      = NULL;
-        str.arr         = NULL;
+    if( Cycle( &wanted, &str, &rec ) ) {
+        PrintError();
+        ClearAll( wanted, str, rec );
+        return EXIT_FAILURE;
     }
 
     //
 
     ClearAll( wanted, str, rec );
-
-    if( check != EOF ) {
-        PrintError();
-        return EXIT_FAILURE;
-    }
 
     return EXIT_SUCCESS;
 }
