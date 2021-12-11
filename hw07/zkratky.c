@@ -245,6 +245,40 @@ bool Init( save *rec, bool quot )
     return EXIT_SUCCESS;
 }
 
+/**
+ * @brief           Prints out all possible outcomes on the end
+ * 
+ * @param rec       record with all possible outcomes
+ * @param str       save str, with originaly loaded string
+ * @param key       key from input, determines which output user wants
+ */
+void PrintOut( record *rec, save *str, char key )
+{
+    if( rec->compSize.len > 0 && key == all ) {
+        for( type i = 0; i < rec->max; i++ )
+            rec->comp[ 0 ]->arr[ i ]->data
+                = toupper( rec->comp[ 0 ]->arr[ i ]->data );
+        for( type y = 0; y < str->size.len; y++ )
+            printf( "%c", str->arr[ y ]->data );
+        printf( "\n" );
+        
+        for( type i = 1; i < rec->compSize.len; i++ ) {
+            for( type y = 0; y < rec->max; y++ )
+                rec->comp[ i - 1 ]->arr[ y ]->data
+                    = tolower( rec->comp[ i - 1 ]->arr[ y ]->data );
+            for( type y = 0; y < rec->max; y++ )
+                rec->comp[ i ]->arr[ y ]->data
+                    = toupper( rec->comp[ i ]->arr[ y ]->data );
+
+            for( type y = 0; y < str->size.len; y++ )
+                printf( "%c", str->arr[ y ]->data );
+            printf( "\n" );
+        }
+    }
+
+    printf( "%lld\n", rec->compSize.len );
+}
+
 //
 
 int main( void )
@@ -341,29 +375,7 @@ int main( void )
 
         //
 
-        if( rec.compSize.len > 0 ) {
-            for( type i = 0; i < rec.max; i++ )
-                rec.comp[ 0 ]->arr[ i ]->data
-                    = toupper( rec.comp[ 0 ]->arr[ i ]->data );
-            for( type y = 0; y < str.size.len; y++ )
-                printf( "%c", str.arr[ y ]->data );
-            printf( "\n" );
-            
-            for( type i = 1; i < rec.compSize.len; i++ ) {
-                for( type y = 0; y < rec.max; y++ )
-                    rec.comp[ i - 1 ]->arr[ y ]->data
-                        = tolower( rec.comp[ i - 1 ]->arr[ y ]->data );
-                for( type y = 0; y < rec.max; y++ )
-                    rec.comp[ i ]->arr[ y ]->data
-                        = toupper( rec.comp[ i ]->arr[ y ]->data );
 
-                for( type y = 0; y < str.size.len; y++ )
-                    printf( "%c", str.arr[ y ]->data );
-                printf( "\n" );
-            }
-        }
-
-        printf( "%lld\n", rec.compSize.len );
 
         //
 
