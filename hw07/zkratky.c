@@ -18,7 +18,7 @@ typedef struct list_struct
     struct list_struct *before;
 } list;
 
-void Add( list *n, list **after )
+void Add            ( list *n, list **after )
 {
     n->after = *after;
     if( *after != NULL )
@@ -27,7 +27,7 @@ void Add( list *n, list **after )
     n->before = NULL;
 }
 
-list *Create( char data )
+list *Create        ( char data )
 {
     list *n = ( list* )malloc( sizeof( list ) );
     n->after = NULL;
@@ -36,7 +36,7 @@ list *Create( char data )
     return n;
 }
 
-void Clear( list *l )
+void Clear          ( list *l )
 {
     list *d;
     list *tmp = l->before;
@@ -56,7 +56,7 @@ void Clear( list *l )
     return;
 }
 
-void RemoveDontFree( list *l ) 
+void RemoveDontFree ( list *l ) 
 {
     if( l->after != NULL )
         ( l->after )->before = l->before;
@@ -64,13 +64,13 @@ void RemoveDontFree( list *l )
         ( l->before )->after = l->after;
 }
 
-void Remove( list *l )
+void Remove         ( list *l )
 {
     RemoveDontFree( l );
     free( l );
 }
 
-void Insert( list* where, list* item )
+void Insert         ( list* where, list* item )
 {
     item->before = where->before;
     ( where->before )->after = item;
@@ -96,7 +96,6 @@ typedef struct save_struct
     measures size;
 
     list *start;
-    list *need;
 } save;
 
 typedef struct possible_struct
@@ -115,6 +114,7 @@ typedef struct record_struct
     type max;
 
     type occurs;
+    bool once;
 
     possible **arr;
     measures size;
@@ -136,15 +136,23 @@ enum keys
  * @brief           Prints common error message on stdout
  * 
  */
-void PrintError ( void );
+void PrintError     ( void );
 
 /**
  * @brief           clears memory of all allocated memory on given pointers
  * 
  * @param wanted    save struct, wanted char on start
  * @param str       save struct, str saved on cycle
+ * @param rec       record struct, to clear the outomes
  */
-void ClearAll   ( save wanted, save str, record rec );
+void ClearAll       ( save wanted, save str, record rec );
+
+/**
+ * @brief           Clears allocated memory of save
+ * 
+ * @param rec       save struct to be freed
+ */
+void SaveClear       ( save *rec );
 
 /**
  * @brief           Extends given pointer when needed based on size data
@@ -154,7 +162,7 @@ void ClearAll   ( save wanted, save str, record rec );
  * @param size      measures struct, given sizes
  * @return void*    returns the same or extended (when needed) ptr, NULL on failure
  */
-void *Extend    ( void *ptr, unsigned long so, measures *size );
+void *Extend        ( void *ptr, unsigned long so, measures *size );
 
 /**
  * @brief           Comparing function for qsort, sorts by char ch
@@ -163,28 +171,27 @@ void *Extend    ( void *ptr, unsigned long so, measures *size );
  * @param r2        record two
  * @return int      -1 on record one ch smaller, 0 on even, otherwise 1
  */
-int CmpByAlpha  ( const void *r1, const void *r2 );
+int CmpByAlpha      ( const void *r1, const void *r2 );
 
 /**
  * @brief           Removes not needed characters from list in str save
  * 
  * @param wanted    wanted save with characters needed
  * @param str       str save with characters from input
- * @return true     on failure
- * @return false    on success
+ * @return true     when it is not possible to match the pattern
+ * @return false    when it is possible to match
  */
-bool Eliminate  ( save wanted, save *str );
+bool Eliminate      ( save wanted, save *str );
 
 /**
  * @brief           Function to find and save all possible outcomes, 
  *                  not really a recursion
  * 
- * @param pos       position pointer
- * @param rec       record pointer
+ * @param rec       record pointer, saving all possible outcomes
  * @return true     on failure
  * @return false    on success
  */
-bool Recursion  ( record *rec );
+bool Recursion      ( record *rec );
 
 //
 
@@ -195,20 +202,27 @@ bool Recursion  ( record *rec );
  * @return true     on failure
  * @return false    on success
  */
-bool Init       ( save *rec, bool quot )
+bool Init           ( save *rec, bool quot )
 {
     rec->sorted     = NULL;
     rec->arr        = NULL;
     rec->size.alloc = 0;
     rec->size.len   = 0;
-
     rec->start      = NULL;
 
-    char ch;
-    while( ( ch = getchar() ) != '\n' && ch != EOF ) {
+    char ch = getchar();
+    if( quot ) {
+        while( ch == ' ' )
+            ch = getchar();
+        if( ch != '"' )
+            return EXIT_FAILURE;
+        ch = getchar();
+    }
+
+    do {
         if( ch == '"' )
             break;
-        if( !quot && islower( ch ) )
+        if( !quot && !isupper( ch ) )
             return EXIT_FAILURE;
         ch = tolower( ch );
 
@@ -232,21 +246,23 @@ bool Init       ( save *rec, bool quot )
 
         rec->sorted[ size->len ] = n;
         rec->arr[ size->len ] = n;
-        size->len ++; 
-    }
+        size->len ++;
+    } while( ( ch = getchar() ) != '\n' && ch != EOF );
+
     if ( ch == EOF )
         return EXIT_FAILURE;
     else if( quot ) {
         if ( ch == '\n' )
             return EXIT_FAILURE;
-        else if( getchar() != '\n' )
-            return EXIT_FAILURE;
     }
 
-    rec->start = rec->sorted[ 0 ];
+    while( ch != '\n' )
+        ch = getchar();
+    if( rec->size.len > 0 ) {
+        rec->start = rec->sorted[ 0 ];
 
-    qsort( rec->sorted, rec->size.len, sizeof( list* ), CmpByAlpha );
-
+        qsort( rec->sorted, rec->size.len, sizeof( list* ), CmpByAlpha );
+    }
     return EXIT_SUCCESS;
 }
 
@@ -257,15 +273,21 @@ bool Init       ( save *rec, bool quot )
  * @param str       save str, with originaly loaded string
  * @param key       key from input, determines which output user wants
  */
-void PrintOut   ( record *rec, save *str, char key )
+void PrintOut       ( record *rec, save *str, char key )
 {
-    if( rec->compSize.len > 0 && key == all ) {
+    if( key == counts ) {
+        printf( "> limit %lld: %lld\n", rec->occurs, rec->compSize.len );
+        return;
+    }
+
+    if( rec->compSize.len > 0 ) {
         for( type i = 0; i < rec->max; i++ )
             rec->comp[ 0 ]->arr[ i ]->data
                 = toupper( rec->comp[ 0 ]->arr[ i ]->data );
+        printf( "\"" );
         for( type y = 0; y < str->size.len; y++ )
             printf( "%c", str->arr[ y ]->data );
-        printf( "\n" );
+        printf( "\"\n" );
         
         for( type i = 1; i < rec->compSize.len; i++ ) {
             for( type y = 0; y < rec->max; y++ )
@@ -275,101 +297,111 @@ void PrintOut   ( record *rec, save *str, char key )
                 rec->comp[ i ]->arr[ y ]->data
                     = toupper( rec->comp[ i ]->arr[ y ]->data );
 
+            printf( "\"" );
             for( type y = 0; y < str->size.len; y++ )
                 printf( "%c", str->arr[ y ]->data );
-            printf( "\n" );
+            printf( "\"\n" );
         }
     }
+    printf( "> %lld\n", rec->compSize.len );
 
-    printf( "%lld\n", rec->compSize.len );
 }
 
-
-bool Cycle      ( save *wanted, save *str, record *rec )
+/**
+ * @brief           Prints possible zeros only
+ * 
+ * @param rec       record with all possible outcomes
+ * @param str       save str, with originaly loaded string
+ * @param key       key from input, determines which output user wants
+ * @param occurs    maximum letter occurances in one word in final string
+ * @return true     on failure
+ * @return false    on success
+ */
+bool Resolve        ( record *rec, save *wanted, save *str, char key, type occurs )
 {
-    int check;
-    char key;
-    type occurs;
-    bool once = false;
-
-    while( ( check = scanf( "%c %lld ", &key, &occurs ) ) == 2 ) {
-        once = true;
-
-        if( ( key != all && key != counts ) || occurs <= 0 )
-            return EXIT_FAILURE;
-
-        if( getchar() != '"' )
-            return EXIT_FAILURE;
-
-        if( Init( str, true ) )
-            return EXIT_FAILURE;
-
-        Eliminate( *wanted, str );
-
-        //
-
-        possible *pos       = ( possible* )malloc( sizeof( possible ) );
-        if( pos == NULL )
-            return EXIT_FAILURE;
-        pos->arr            = ( list** )malloc( sizeof( list* ) * wanted->size.len );
-        if( pos->arr == NULL )
-            return EXIT_FAILURE;
-        pos->index          = 0;
-        pos->ptr            = str->arr[ 0 ];
-        pos->searching      = wanted->start;
-        pos->occurs         = 0;
-
-        rec->size.alloc      = 1;
-        rec->size.len        = 1;
-        rec->arr             = ( possible** )malloc( sizeof( possible* ) );
-        if( rec->arr == NULL )
-            return EXIT_FAILURE;
-        rec->arr[ 0 ]        = pos;
-        
-        rec->compSize.alloc  = 0;
-        rec->compSize.len    = 0;
-        rec->comp            = NULL;
-        
-        rec->max             = wanted->size.len;
-        rec->index           = 0;
-        rec->occurs          = occurs;
-
-        //
-
-        while( rec->index != rec->size.len ) {
-            if( Recursion( rec ) )
+    if( key == all ) {
+        rec->occurs = occurs;
+        if( rec->compSize.len != 0 )
+            if( InCycle( wanted, str, rec, key ) )
                 return EXIT_FAILURE;
+        else
+            PrintOut( &rec, &str, key );
+    }
+    else {
+        for( type i = 1; i <= occurs; i++ ) {
+            rec->occurs = i;
+            if( rec->compSize.len != 0 )
+                if( InCycle( wanted, str, rec, key ) )
+                    return EXIT_FAILURE;
+            else
+                PrintOut( &rec, &str, key );
         }
-        PrintOut( rec, str, key );
-
-        //
-
-        free( str->sorted );
-        for( type i = 0; i < str->size.len; i++ )
-            free( str->arr[ i ] );
-        free( str->arr );
-
-        for( type i = 0; i < rec->size.len; i++ ) {
-            free( rec->arr[ i ]->arr );
-            free( rec->arr[ i ] );
-        }
-        free( rec->arr );
-        free( rec->comp );
-
-        rec->arr         = NULL;
-        str->sorted      = NULL;
-        str->arr         = NULL;
     }
 
-    if( check != EOF || !once )
+    return EXIT_SUCCESS;
+}
+
+/**
+ * @brief           Solving, deciding and printing all the possible outcomes
+ * 
+ * @param wanted    save struct, wanted string
+ * @param str       save struct, str to save loaded string to modify
+ * @param rec       record struct, saving all possible outcomes
+ * @return true     on success
+ * @return false    on failure
+ */
+bool InCycle        ( save *wanted, save *str, record *rec, char key )
+{
+    possible *pos       = ( possible* )malloc( sizeof( possible ) );
+    if( pos == NULL )
         return EXIT_FAILURE;
+    pos->arr            = ( list** )malloc( sizeof( list* ) * wanted->size.len );
+    if( pos->arr == NULL )
+        return EXIT_FAILURE;
+    pos->index          = 0;
+    pos->ptr            = str->arr[ 0 ];
+    pos->searching      = wanted->start;
+    pos->occurs         = 0;
+
+    rec->size.alloc      = 1;
+    rec->size.len        = 1;
+    rec->arr             = ( possible** )malloc( sizeof( possible* ) );
+    if( rec->arr == NULL )
+        return EXIT_FAILURE;
+    rec->arr[ 0 ]        = pos;
+    
+    rec->compSize.alloc  = 0;
+    rec->compSize.len    = 0;
+    rec->comp            = NULL;
+    
+    rec->max             = wanted->size.len;
+    rec->index           = 0;
+
+    //
+
+    while( rec->index != rec->size.len ) {
+        if( Recursion( rec ) )
+            return EXIT_FAILURE;
+    }
+    PrintOut( rec, str, key );
+
+    //
+
+    for( type i = 0; i < rec->size.len; i++ ) {
+        free( rec->arr[ i ]->arr );
+        free( rec->arr[ i ] );
+    }
+    free( rec->arr );
+    free( rec->comp );
+
+    rec->arr         = NULL;
 
     return EXIT_SUCCESS;
 }
 
 //
 
-int main( void )
+int main            ( void )
 {
     save wanted, str;
     str.sorted      = NULL;
@@ -392,15 +424,58 @@ int main( void )
 
     printf( "Problemy:\n" );
 
-    if( Cycle( &wanted, &str, &rec ) ) {
+    int check;
+    char key;
+    type occurs;
+    rec.once = false;
+    while( ( check = scanf( "%c %lld ", &key, &occurs ) ) == 2 ) {
+        rec.once = true;
+        
+        if( ( key != all && key != counts ) || occurs <= 0 ) {
+            PrintError();
+            ClearAll( wanted, str, rec );
+            return EXIT_FAILURE;
+        }
+
+        if( Init( &str, true ) ) {
+            PrintError();
+            ClearAll( wanted, str, rec );
+            return EXIT_FAILURE;
+        }
+
+        if( str.size.len == 0 ) {
+            rec.compSize.len = 0;
+            Resolve( &rec, &wanted, &str, key, occurs );
+
+            SaveClear( &str );
+            continue;
+        }
+
+        if( Eliminate( wanted, &str ) ) {
+            rec.compSize.len = 0;
+            Resolve( &rec, &wanted, &str, key, occurs );
+
+            SaveClear( &str );
+            continue;
+        }
+
+        if( Resolve( &rec, &wanted, &str, key, occurs ) ) {
+            PrintError();
+            ClearAll( wanted, str, rec );
+            return EXIT_FAILURE;
+        }
+
+        SaveClear( &str );
+    }
+
+    ClearAll( wanted, str, rec );
+
+    if( check != EOF || !rec.once ) {
         PrintError();
-        ClearAll( wanted, str, rec );
         return EXIT_FAILURE;
     }
 
     //
-
-    ClearAll( wanted, str, rec );
 
     return EXIT_SUCCESS;
 }
@@ -414,19 +489,9 @@ void PrintError( void )
 
 void ClearAll( save wanted, save str, record rec )
 {
-    free( wanted.sorted );
-    if( wanted.arr != NULL ) {
-        for( type i = 0; i < wanted.size.len; i++ )
-            free( wanted.arr[ i ] );
-    }
-    free( wanted.arr );
+    SaveClear( &wanted );
 
-    free( str.sorted );
-    if( str.arr != NULL ) {
-        for( type i = 0; i < str.size.len; i++ )
-            free( str.arr[ i ] );
-    }
-    free( str.arr );
+    SaveClear( &str );
 
     if( rec.arr != NULL ) {
         for( type i = 0; i < rec.size.len; i++ ) {
@@ -435,6 +500,19 @@ void ClearAll( save wanted, save str, record rec )
         }
     }
     free( rec.arr );
+}
+
+void SaveClear( save *rec )
+{
+    free( rec->sorted );
+    if( rec->arr != NULL ) {
+        for( type i = 0; i < rec->size.len; i++ )
+            free( rec->arr[ i ] );
+    }
+    free( rec->arr );
+
+    rec->sorted = NULL;
+    rec->arr = NULL;
 }
 
 void *Extend( void *ptr, unsigned long so, measures *size )
@@ -495,7 +573,7 @@ bool Eliminate( save wanted, save *str )
 
     //
 
-    return true;
+    return EXIT_SUCCESS;
 }
 
 bool Recursion( record *rec )
