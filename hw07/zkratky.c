@@ -2,7 +2,7 @@
 #include <stdlib.h>     // malloc, realloc, free
 #include <stdbool.h>    // boolean true false logic values
 #include <string.h>     // string functions
-#include <ctype.h>
+#include <ctype.h>      // isalpha, isupper, islower
 
 // using numeric type on all numbers
 #define type long long
@@ -102,7 +102,9 @@ typedef struct possible_struct
 {
     list** arr;
     type index;
+
     type occurs;
+    type maxOccurs;
 
     list *ptr;
     list *searching;
@@ -276,69 +278,47 @@ bool Init           ( save *rec, bool quot )
 void PrintOut       ( record *rec, save *str, char key )
 {
     if( key == counts ) {
-        printf( "> limit %lld: %lld\n", rec->occurs, rec->compSize.len );
+        type *occursCounts = ( type* )malloc( sizeof( type ) * rec->occurs );
+        for( type i = 0; i < rec->occurs; i++ )
+            occursCounts[ i ] = 0;
+        for( type i = 0; i < rec->compSize.len; i++ ) {
+            occursCounts[ rec->comp[ i ]->maxOccurs - 1 ] ++;
+            //printf( "%lld\n", rec->comp[ i ]->maxOccurs );
+        }
+        for( type i = 1; i < rec->occurs; i++ )
+            occursCounts[ i ] += occursCounts[ i - 1 ];
+        for( type i = 0; i < rec->occurs; i++ )
+            printf( "> limit %lld: %lld\n", i + 1, occursCounts[ i ] );
+        free( occursCounts );
         return;
     }
-
-    if( rec->compSize.len > 0 ) {
-        for( type i = 0; i < rec->max; i++ )
-            rec->comp[ 0 ]->arr[ i ]->data
-                = toupper( rec->comp[ 0 ]->arr[ i ]->data );
-        printf( "\"" );
-        for( type y = 0; y < str->size.len; y++ )
-            printf( "%c", str->arr[ y ]->data );
-        printf( "\"\n" );
-        
-        for( type i = 1; i < rec->compSize.len; i++ ) {
-            for( type y = 0; y < rec->max; y++ )
-                rec->comp[ i - 1 ]->arr[ y ]->data
-                    = tolower( rec->comp[ i - 1 ]->arr[ y ]->data );
-            for( type y = 0; y < rec->max; y++ )
-                rec->comp[ i ]->arr[ y ]->data
-                    = toupper( rec->comp[ i ]->arr[ y ]->data );
-
+    else {
+        if( rec->compSize.len > 0 ) {
+            for( type i = 0; i < rec->max; i++ )
+                rec->comp[ 0 ]->arr[ i ]->data
+                    = toupper( rec->comp[ 0 ]->arr[ i ]->data );
             printf( "\"" );
             for( type y = 0; y < str->size.len; y++ )
                 printf( "%c", str->arr[ y ]->data );
             printf( "\"\n" );
+            
+            for( type i = 1; i < rec->compSize.len; i++ ) {
+                for( type y = 0; y < rec->max; y++ )
+                    rec->comp[ i - 1 ]->arr[ y ]->data
+                        = tolower( rec->comp[ i - 1 ]->arr[ y ]->data );
+                for( type y = 0; y < rec->max; y++ )
+                    rec->comp[ i ]->arr[ y ]->data
+                        = toupper( rec->comp[ i ]->arr[ y ]->data );
+
+                printf( "\"" );
+                for( type y = 0; y < str->size.len; y++ )
+                    printf( "%c", str->arr[ y ]->data );
+                printf( "\"\n" );
+            }
         }
+        printf( "> %lld\n", rec->compSize.len );
+        return;
     }
-    printf( "> %lld\n", rec->compSize.len );
-
-}
-
-/**
- * @brief           Prints possible zeros only
- * 
- * @param rec       record with all possible outcomes
- * @param str       save str, with originaly loaded string
- * @param key       key from input, determines which output user wants
- * @param occurs    maximum letter occurances in one word in final string
- * @return true     on failure
- * @return false    on success
- */
-bool Resolve        ( record *rec, save *wanted, save *str, char key, type occurs )
-{
-    if( key == all ) {
-        rec->occurs = occurs;
-        if( rec->compSize.len != 0 )
-            if( InCycle( wanted, str, rec, key ) )
-                return EXIT_FAILURE;
-        else
-            PrintOut( &rec, &str, key );
-    }
-    else {
-        for( type i = 1; i <= occurs; i++ ) {
-            rec->occurs = i;
-            if( rec->compSize.len != 0 )
-                if( InCycle( wanted, str, rec, key ) )
-                    return EXIT_FAILURE;
-            else
-                PrintOut( &rec, &str, key );
-        }
-    }
-
-    return EXIT_SUCCESS;
 }
 
 /**
@@ -362,20 +342,21 @@ bool InCycle        ( save *wanted, save *str, record *rec, char key )
     pos->ptr            = str->arr[ 0 ];
     pos->searching      = wanted->start;
     pos->occurs         = 0;
+    pos->maxOccurs      = 0;
 
-    rec->size.alloc      = 1;
-    rec->size.len        = 1;
-    rec->arr             = ( possible** )malloc( sizeof( possible* ) );
+    rec->size.alloc     = 1;
+    rec->size.len       = 1;
+    rec->arr            = ( possible** )malloc( sizeof( possible* ) );
     if( rec->arr == NULL )
         return EXIT_FAILURE;
-    rec->arr[ 0 ]        = pos;
+    rec->arr[ 0 ]       = pos;
     
-    rec->compSize.alloc  = 0;
-    rec->compSize.len    = 0;
-    rec->comp            = NULL;
+    rec->compSize.alloc = 0;
+    rec->compSize.len   = 0;
+    rec->comp           = NULL;
     
-    rec->max             = wanted->size.len;
-    rec->index           = 0;
+    rec->max            = wanted->size.len;
+    rec->index          = 0;
 
     //
 
@@ -394,7 +375,8 @@ bool InCycle        ( save *wanted, save *str, record *rec, char key )
     free( rec->arr );
     free( rec->comp );
 
-    rec->arr         = NULL;
+    rec->arr            = NULL;
+    rec->comp           = NULL;
 
     return EXIT_SUCCESS;
 }
@@ -430,6 +412,7 @@ int main            ( void )
     rec.once = false;
     while( ( check = scanf( "%c %lld ", &key, &occurs ) ) == 2 ) {
         rec.once = true;
+        rec.occurs = occurs;
         
         if( ( key != all && key != counts ) || occurs <= 0 ) {
             PrintError();
@@ -445,7 +428,7 @@ int main            ( void )
 
         if( str.size.len == 0 ) {
             rec.compSize.len = 0;
-            Resolve( &rec, &wanted, &str, key, occurs );
+            PrintOut( &rec, &str, key );
 
             SaveClear( &str );
             continue;
@@ -453,13 +436,13 @@ int main            ( void )
 
         if( Eliminate( wanted, &str ) ) {
             rec.compSize.len = 0;
-            Resolve( &rec, &wanted, &str, key, occurs );
+            PrintOut( &rec, &str, key );
 
             SaveClear( &str );
             continue;
         }
 
-        if( Resolve( &rec, &wanted, &str, key, occurs ) ) {
+        if( InCycle( &wanted, &str, &rec, key ) ) {
             PrintError();
             ClearAll( wanted, str, rec );
             return EXIT_FAILURE;
@@ -544,24 +527,49 @@ bool Eliminate( save wanted, save *str )
 
     type count = 0;
     type i = 0;
+
     for( ; i < str->size.len; i++ )
         if( str->sorted[ i ]->data != ' ' )
             break;
     for( ; i < str->size.len; i++ ) {
+        if( isalpha( str->sorted[ i ]->data ) )
+            break;
+        else
+            RemoveDontFree( str->sorted[ i ] );
+    }
+    for( ; wIndex < wanted.size.len; wIndex++ ) {
+        if( wIndex + 1 >= wanted.size.len )
+            break;
+        else if( wanted.sorted[ wIndex + 1 ]->data
+            != wanted.sorted[ wIndex ]->data )
+            break;
+    }
+
+    for( ; i < str->size.len; i++ ) {
         list *record = str->sorted[ i ];
 
         if( wanted.sorted[ wIndex ]->data < record->data ) {
-            if( count == 0 )
+            if( count == 0 ) {
+                //printf( "%c %lld\n", wanted.sorted[ wIndex ]->data, wIndex );
                 return EXIT_FAILURE;
+            }
+            wIndex ++;
+            for( ; wIndex < wanted.size.len; wIndex++ ) {
+                if( wIndex + 1 >= wanted.size.len )
+                    break;
+                else if( wanted.sorted[ wIndex + 1 ]->data
+                 != wanted.sorted[ wIndex ]->data )
+                    break;
+            }
 
-            if( ++wIndex == wanted.size.len )
+            if( wIndex >= wanted.size.len )
                 break;
             count = 0;
         }
 
         if( record->data != wanted.sorted[ wIndex ]->data ) {
             if( str->start == record )
-                str->start = str->start->after;
+                str->start = record->after;
             RemoveDontFree( record );
         }
         else {
@@ -598,6 +606,8 @@ bool Recursion( record *rec )
     }
     else if( pos->ptr->data == DELIMETER ) {
         pos->ptr = pos->ptr->before;
+        if( pos->occurs > pos->maxOccurs )
+            pos->maxOccurs = pos->occurs;
         pos->occurs = 0;
         return EXIT_SUCCESS;
     }
@@ -615,10 +625,14 @@ bool Recursion( record *rec )
             newPos->arr[ i ] = pos->arr[ i ];
         newPos->arr[ pos->index ] = pos->ptr;
 
-        newPos->ptr = pos->ptr->before;
-        newPos->searching = pos->searching->before;
-        newPos->index = pos->index + 1;
-        newPos->occurs = pos->occurs + 1;
+        newPos->ptr         = pos->ptr->before;
+        newPos->searching   = pos->searching->before;
+        newPos->index       = pos->index + 1;
+        newPos->occurs      = pos->occurs + 1;
+        newPos->maxOccurs   = pos->maxOccurs;
+
+        if( pos->occurs + 1 > pos->maxOccurs )
+            newPos->maxOccurs  = pos->occurs + 1;
 
         rec->arr = ( possible** )Extend( rec->arr, sizeof( possible* ), &rec->size );
         if( rec->arr == NULL )
