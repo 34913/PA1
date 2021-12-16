@@ -100,8 +100,11 @@ typedef struct save_struct
 
 typedef struct possible_struct
 {
-    list** arr;
-    type index;
+    struct possible_struct *last;
+    list *change;
+
+    // list** arr;
+    // type index;
 
     type occurs;
     type maxOccurs;
@@ -283,7 +286,6 @@ void PrintOut       ( record *rec, save *str, char key )
             occursCounts[ i ] = 0;
         for( type i = 0; i < rec->compSize.len; i++ ) {
             occursCounts[ rec->comp[ i ]->maxOccurs - 1 ] ++;
-            //printf( "%lld\n", rec->comp[ i ]->maxOccurs );
         }
         for( type i = 1; i < rec->occurs; i++ )
             occursCounts[ i ] += occursCounts[ i - 1 ];
@@ -294,22 +296,30 @@ void PrintOut       ( record *rec, save *str, char key )
     }
     else {
         if( rec->compSize.len > 0 ) {
-            for( type i = 0; i < rec->max; i++ )
-                rec->comp[ 0 ]->arr[ i ]->data
-                    = toupper( rec->comp[ 0 ]->arr[ i ]->data );
+            possible *help = rec->comp[ 0 ];
+            while( help->last != NULL ) {
+                char ch = help->change->data;
+                help->change->data = toupper( ch );
+                help = help->last;
+            }
             printf( "\"" );
             for( type y = 0; y < str->size.len; y++ )
                 printf( "%c", str->arr[ y ]->data );
             printf( "\"\n" );
             
             for( type i = 1; i < rec->compSize.len; i++ ) {
-                for( type y = 0; y < rec->max; y++ )
-                    rec->comp[ i - 1 ]->arr[ y ]->data
-                        = tolower( rec->comp[ i - 1 ]->arr[ y ]->data );
-                for( type y = 0; y < rec->max; y++ )
-                    rec->comp[ i ]->arr[ y ]->data
-                        = toupper( rec->comp[ i ]->arr[ y ]->data );
-
+                help = rec->comp[ i - 1 ];
+                while( help->change != NULL ) {
+                    char *ch = &help->change->data;
+                    *ch = tolower( *ch );
+                    help = help->last;
+                }
+                help = rec->comp[ i ];
+                while( help->change != NULL ) {
+                    char *ch = &help->change->data;
+                    *ch = toupper( *ch );
+                    help = help->last;
+                }
                 printf( "\"" );
                 for( type y = 0; y < str->size.len; y++ )
                     printf( "%c", str->arr[ y ]->data );
@@ -335,10 +345,9 @@ bool InCycle        ( save *wanted, save *str, record *rec, char key )
     possible *pos       = ( possible* )malloc( sizeof( possible ) );
     if( pos == NULL )
         return EXIT_FAILURE;
-    pos->arr            = ( list** )malloc( sizeof( list* ) * wanted->size.len );
-    if( pos->arr == NULL )
-        return EXIT_FAILURE;
-    pos->index          = 0;
+
+    pos->last           = NULL;
+    pos->change         = NULL;
     pos->ptr            = str->arr[ 0 ];
     pos->searching      = wanted->start;
     pos->occurs         = 0;
@@ -368,10 +377,8 @@ bool InCycle        ( save *wanted, save *str, record *rec, char key )
 
     //
 
-    for( type i = 0; i < rec->size.len; i++ ) {
-        free( rec->arr[ i ]->arr );
+    for( type i = 0; i < rec->size.len; i++ )
         free( rec->arr[ i ] );
-    }
     free( rec->arr );
     free( rec->comp );
 
@@ -477,10 +484,8 @@ void ClearAll( save wanted, save str, record rec )
     SaveClear( &str );
 
     if( rec.arr != NULL ) {
-        for( type i = 0; i < rec.size.len; i++ ) {
-            free( rec.arr[ i ]->arr );
+        for( type i = 0; i < rec.size.len; i++ )
             free( rec.arr[ i ] );
-        }
     }
     free( rec.arr );
 }
@@ -549,10 +554,8 @@ bool Eliminate( save wanted, save *str )
         list *record = str->sorted[ i ];
 
         if( wanted.sorted[ wIndex ]->data < record->data ) {
-            if( count == 0 ) {
-                //printf( "%c %lld\n", wanted.sorted[ wIndex ]->data, wIndex );
+            if( count == 0 )
                 return EXIT_FAILURE;
-            }
             wIndex ++;
             for( ; wIndex < wanted.size.len; wIndex++ ) {
                 if( wIndex + 1 >= wanted.size.len )
@@ -606,8 +609,6 @@ bool Recursion( record *rec )
     }
     else if( pos->ptr->data == DELIMETER ) {
         pos->ptr = pos->ptr->before;
-        if( pos->occurs > pos->maxOccurs )
-            pos->maxOccurs = pos->occurs;
         pos->occurs = 0;
         return EXIT_SUCCESS;
     }
@@ -617,22 +618,15 @@ bool Recursion( record *rec )
         if( newPos == NULL )
             return EXIT_FAILURE;
 
-        newPos->arr = ( list** )malloc( sizeof( list* ) * rec->max );
-        if( newPos->arr == NULL )
-            return EXIT_FAILURE;
-
-        for( type i = 0; i < pos->index; i++ )
-            newPos->arr[ i ] = pos->arr[ i ];
-        newPos->arr[ pos->index ] = pos->ptr;
-
         newPos->ptr         = pos->ptr->before;
         newPos->searching   = pos->searching->before;
-        newPos->index       = pos->index + 1;
-        newPos->occurs      = pos->occurs + 1;
+        newPos->occurs      = pos->occurs;
         newPos->maxOccurs   = pos->maxOccurs;
+        newPos->last        = pos;
+        newPos->change      = pos->ptr;
 
-        if( pos->occurs + 1 > pos->maxOccurs )
-            newPos->maxOccurs  = pos->occurs + 1;
+        if( ++ newPos->occurs > newPos->maxOccurs )
+            newPos->maxOccurs = newPos->occurs;
 
         rec->arr = ( possible** )Extend( rec->arr, sizeof( possible* ), &rec->size );
         if( rec->arr == NULL )
