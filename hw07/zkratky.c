@@ -198,6 +198,15 @@ bool Eliminate      ( save wanted, save *str );
  */
 bool Recursion      ( record *rec );
 
+/**
+ * @brief 
+ * 
+ * @param rec 
+ * @return true 
+ * @return false 
+ */
+bool RecursionCounts( record *rec );
+
 //
 
 /**
@@ -523,32 +532,26 @@ int CmpByAlpha( const void *r1, const void *r2 )
 
     if( l1->data < l2->data )
         return -1;
-    return 1;
+    else if( l1->data > l2->data )
+        return 1;
+    return 0;
 }
 
 bool Eliminate( save wanted, save *str )
 {
     type wIndex = 0;
-
-    type count = 0;
     type i = 0;
 
-    for( ; i < str->size.len; i++ )
-        if( str->sorted[ i ]->data != ' ' )
-            break;
-    for( ; i < str->size.len; i++ ) {
-        if( isalpha( str->sorted[ i ]->data ) )
-            break;
-        else
-            RemoveDontFree( str->sorted[ i ] );
-    }
-    for( ; wIndex < wanted.size.len; wIndex++ ) {
-        if( wIndex + 1 >= wanted.size.len )
-            break;
-        else if( wanted.sorted[ wIndex + 1 ]->data
+    for( ; i < str->size.len && str->sorted[ i ]->data == ' '; i++ );
+    for( ; i < str->size.len && !isalpha( str->sorted[ i ]->data ); i++ )
+        RemoveDontFree( str->sorted[ i ] );
+
+    for( ; wIndex < wanted.size.len && wIndex + 1 != wanted.size.len; wIndex++ ) {
+        if( wanted.sorted[ wIndex + 1 ]->data
             != wanted.sorted[ wIndex ]->data )
             break;
     }
+    type count = 0;
 
     for( ; i < str->size.len; i++ ) {
         list *record = str->sorted[ i ];
@@ -557,11 +560,9 @@ bool Eliminate( save wanted, save *str )
             if( count == 0 )
                 return EXIT_FAILURE;
             wIndex ++;
-            for( ; wIndex < wanted.size.len; wIndex++ ) {
-                if( wIndex + 1 >= wanted.size.len )
-                    break;
-                else if( wanted.sorted[ wIndex + 1 ]->data
-                 != wanted.sorted[ wIndex ]->data )
+            for( ; wIndex < wanted.size.len && wIndex + 1 != wanted.size.len; wIndex++ ) {
+                if( wanted.sorted[ wIndex + 1 ]->data
+                    != wanted.sorted[ wIndex ]->data )
                     break;
             }
 
