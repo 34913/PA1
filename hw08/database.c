@@ -97,53 +97,26 @@ int       addPerson        ( TDATABASE       * db,
   else if( ( id1 == id2 && id1 != 0 ) || id == id1 || id == id2 )
     return 0;
 
-  TBINARY **ptr = &db->begin;
-  while( *ptr != NULL ) {
-    type idHelp = ( *ptr )->person->id;
-    if( id == idHelp )
-      return 0;
-    else if( id < idHelp )
-      ptr = &((*ptr)->left);
-    else
-      ptr = &((*ptr)->right);
-  }
+  TBINARY **ptr = FindBinary( db, id );
+  if( *ptr != NULL )
+    return 0;
 
   //
 
   TRECORD *p1 = NULL;
   if( id1 != 0 ) {
-    TBINARY *help = db->begin;
-    while( help != NULL ) {
-      type idHelp = help->person->id;
-      
-      if( id1 == idHelp )
-        break;
-      else if( id1 < idHelp )
-        help = help->left;
-      else
-        help = help->right;
-    }
-    if( help == NULL )
+    TBINARY **help = FindBinary( db, id1 );
+    if( *help == NULL )
       return 0;
-    p1 = help->person;
+    p1 = ( *help )->person;
   }
 
   TRECORD *p2 = NULL;
   if( id2 != 0 ) {
-    TBINARY *help = db->begin;
-    while( help != NULL ) {
-      type idHelp = help->person->id;
-      
-      if( id2 == idHelp )
-        break;
-      else if( id2 < idHelp )
-        help = help->left;
-      else
-        help = help->right;
-    }
-    if( help == NULL )
+    TBINARY **help = FindBinary( db, id2 );
+    if( *help == NULL )
       return 0;
-    p2 = help->person;
+    p2 = ( *help )->person;
   }
 
   TRECORD *person = ( TRECORD* )malloc( sizeof( TRECORD ) );
