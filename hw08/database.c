@@ -33,6 +33,8 @@ typedef struct TBinary
   TRECORD        * person;
 } TBINARY;
 
+//
+
 typedef struct TDatabase
 {
   TBINARY        * begin;
@@ -42,19 +44,43 @@ typedef struct TDatabase
 
 //
 
-void      initAll          ( TDATABASE       * db );
-void      doneAll          ( TDATABASE       * db );
+void      initAll          ( TDATABASE       * db )
+{
+  /* todo */
+}
+
+void      doneAll          ( TDATABASE       * db )
+{
+  /* todo */
+}
+
 int       addPerson        ( TDATABASE       * db,
                              int               id,
                              const char      * name,
                              int               id1,
-                             int               id2 );
+                             int               id2 )
+{
+  /* todo */
+}
+
 TRESULT * ancestors        ( TDATABASE       * db,
-                             int               id );
+                             int               id )
+{
+  /* todo */
+}
+
 TRESULT * commonAncestors  ( TDATABASE       * db,
                              int               id1,
-                             int               id2 );
-void      freeResult       ( TRESULT         * res );
+                             int               id2 )
+{
+  /* todo */
+}
+
+void      freeResult       ( TRESULT         * res )
+{
+  /* todo */
+}
+
 
 //
 
@@ -230,40 +256,3 @@ int main                   ( int               argc,
 #endif
 
 //
-
-void      initAll          ( TDATABASE       * db )
-{
-  /* todo */
-}
-
-void      doneAll          ( TDATABASE       * db )
-{
-  /* todo */
-}
-
-int       addPerson        ( TDATABASE       * db,
-                             int               id,
-                             const char      * name,
-                             int               id1,
-                             int               id2 )
-{
-  /* todo */
-}
-
-TRESULT * ancestors        ( TDATABASE       * db,
-                             int               id )
-{
-  /* todo */
-}
-
-TRESULT * commonAncestors  ( TDATABASE       * db,
-                             int               id1,
-                             int               id2 )
-{
-  /* todo */
-}
-
-void      freeResult       ( TRESULT         * res )
-{
-  /* todo */
-}
