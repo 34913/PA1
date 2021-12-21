@@ -16,6 +16,7 @@ typedef struct TResult
 #endif
 
 //
+//  additional structs
 
 typedef struct TRecord
 {
@@ -34,6 +35,7 @@ typedef struct TBinary
 } TBINARY;
 
 //
+// main database
 
 typedef struct TDatabase
 {
@@ -43,10 +45,17 @@ typedef struct TDatabase
 } TDATABASE;
 
 //
+//  additional functions
+
+
+//
+//  main service functions
 
 void      initAll          ( TDATABASE       * db )
 {
-  /* todo */
+  db->length      = 0;
+  db->newRecords  = 0;
+  db->begin       = NULL;
 }
 
 void      doneAll          ( TDATABASE       * db )
@@ -80,11 +89,6 @@ void      freeResult       ( TRESULT         * res )
 {
   /* todo */
 }
-
-
-//
-
-
 
 //
 
