@@ -1,10 +1,11 @@
+#ifndef __PROGTEST__
 #include <stdio.h>      // standard I/O
 #include <stdlib.h>     // malloc, realloc, free
 #include <stdbool.h>    // boolean true false logic values
 #include <string.h>     // string functions
 #include <ctype.h>      // isalpha, isupper, islower
 
-//
+#include <assert.h>
 
 typedef struct TResult
 {
@@ -12,18 +13,9 @@ typedef struct TResult
   int              m_ID;
   char           * m_Name;
 } TRESULT;
+#endif
 
-typedef struct TDatabase
-{
-  /* todo */
-} TDATABASE;
-
-typedef struct TBinaryRes
-{
-  struct TBinaryRes * left;
-  struct TBinaryRes * right;
-  TRECORD           * person;
-} TBINARYRES;
+//
 
 typedef struct TRecord
 {
@@ -33,6 +25,20 @@ typedef struct TRecord
   struct TRecord * p1;
   struct TRecord * p2;
 } TRECORD;
+
+typedef struct TBinary
+{
+  struct TBinary * left;
+  struct TBinary * right;
+  TRECORD        * person;
+} TBINARY;
+
+typedef struct TDatabase
+{
+  TBINARY        * begin;
+  long long int    length;
+  long long int    newRecords;
+} TDATABASE;
 
 //
 
@@ -221,8 +227,43 @@ int main                   ( int               argc,
 
   return 0;
 }
-#endif /* __PROGTEST__ */
+#endif
 
 //
 
+void      initAll          ( TDATABASE       * db )
+{
+  /* todo */
+}
 
+void      doneAll          ( TDATABASE       * db )
+{
+  /* todo */
+}
+
+int       addPerson        ( TDATABASE       * db,
+                             int               id,
+                             const char      * name,
+                             int               id1,
+                             int               id2 )
+{
+  /* todo */
+}
+
+TRESULT * ancestors        ( TDATABASE       * db,
+                             int               id )
+{
+  /* todo */
+}
+
+TRESULT * commonAncestors  ( TDATABASE       * db,
+                             int               id1,
+                             int               id2 )
+{
+  /* todo */
+}
+
+void      freeResult       ( TRESULT         * res )
+{
+  /* todo */
+}
