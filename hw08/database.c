@@ -16,6 +16,11 @@ typedef struct TResult
 #endif
 
 //
+// macros
+
+#define type int
+
+//
 //  additional structs
 
 typedef struct TRecord
@@ -39,13 +44,14 @@ typedef struct TBinary
 
 typedef struct TDatabase
 {
-  TBINARY        * begin;
-  long long int    length;
-  long long int    newRecords;
+  TBINARY * begin;
+  type      length;
+  type      newRecords;
 } TDATABASE;
 
 //
 //  additional functions
+
 
 
 //
@@ -53,9 +59,9 @@ typedef struct TDatabase
 
 void      initAll          ( TDATABASE       * db )
 {
-  db->length      = 0;
-  db->newRecords  = 0;
-  db->begin       = NULL;
+  db->length     = 0;
+  db->newRecords = 0;
+  db->begin      = NULL;
 }
 
 void      doneAll          ( TDATABASE       * db )
@@ -69,7 +75,81 @@ int       addPerson        ( TDATABASE       * db,
                              int               id1,
                              int               id2 )
 {
-  /* todo */
+  if( id == 0 )
+    return 0;
+  else if( id1 < 0 || id2 < 0 )
+    return 0;
+  else if( ( id1 == id2 && id1 != 0 ) || id == id1 || id == id2 )
+    return 0;
+
+  TBINARY **ptr = &db->begin;
+  while( *ptr != NULL ) {
+    type idHelp = (*ptr)->person->id;
+    if( id == idHelp )
+      return 0;
+    else if( id < idHelp )
+      ptr = &((*ptr)->left);
+    else
+      ptr = &((*ptr)->right);
+  }
+
+  //
+
+  TRECORD *p1 = NULL;
+  if( id1 != 0 ) {
+    TBINARY *help = db->begin;
+    while( help != NULL ) {
+      type idHelp = help->person->id;
+      
+      if( id1 == idHelp )
+        break;
+      else if( id1 < idHelp )
+        help = help->left;
+      else
+        help = help->right;
+    }
+    if( help == NULL )
+      return 0;
+    p1 = help->person;
+  }
+
+  TRECORD *p2 = NULL;
+  if( id2 != 0 ) {
+    TBINARY *help = db->begin;
+    while( help != NULL ) {
+      type idHelp = help->person->id;
+      
+      if( id2 == idHelp )
+        break;
+      else if( id2 < idHelp )
+        help = help->left;
+      else
+        help = help->right;
+    }
+    if( help == NULL )
+      return 0;
+    p2 = help->person;
+  }
+
+  TRECORD *person = ( TRECORD* )malloc( sizeof( TRECORD ) );
+  if( person == NULL ) {
+    return 0;
+  }
+  person->id       = id;
+  person->p1       = p1;
+  person->p2       = p2;
+
+  TBINARY *newItem = ( TBINARY* )malloc( sizeof( TBINARY ) );
+  if( newItem == NULL ) {
+    free( person );
+    return 0;
+  }
+  newItem->person  = person;
+  newItem->left    = NULL;
+  newItem->right   = NULL;
+
+  *ptr = newItem;
+  return 1;
 }
 
 TRESULT * ancestors        ( TDATABASE       * db,
@@ -116,6 +196,10 @@ int main                   ( int               argc,
   assert ( addPerson ( &a, 11, name, 6, 8 ) == 1 );
   strncpy ( name, "Maria", sizeof ( name ) );
   assert ( addPerson ( &a, 12, name, 5, 8 ) == 1 );
+
+
+  return 0;
+
   l = ancestors ( &a, 11 );
   assert ( l );
   assert ( l -> m_ID == 1 );
