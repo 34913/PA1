@@ -52,7 +52,7 @@ typedef struct TDatabase
 //
 //  additional functions
 
-TBINARY ** FindBinary      ( TDATABASE       * db,
+TBINARY **FindBinary       ( TDATABASE       * db,
                              int               id )
 {
   TBINARY **help = &db->begin;
@@ -69,6 +69,16 @@ TBINARY ** FindBinary      ( TDATABASE       * db,
   return help;
 }
 
+void      FreeBinary       ( TBINARY         * item )
+{
+  if( item == NULL )
+    return;
+  FreeBinary( item->left );
+  FreeBinary( item->right );
+  free( item->person );
+  free( item );
+}
+
 //
 //  main service functions
 
@@ -81,7 +91,7 @@ void      initAll          ( TDATABASE       * db )
 
 void      doneAll          ( TDATABASE       * db )
 {
-  /* todo */
+  FreeBinary( db->begin );
 }
 
 int       addPerson        ( TDATABASE       * db,
@@ -137,6 +147,9 @@ int       addPerson        ( TDATABASE       * db,
   newItem->right   = NULL;
 
   *ptr = newItem;
+  db->length ++;
+  db->newRecords ++;
+
   return 1;
 }
 
