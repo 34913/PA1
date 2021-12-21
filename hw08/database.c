@@ -52,7 +52,22 @@ typedef struct TDatabase
 //
 //  additional functions
 
-
+TBINARY ** FindBinary      ( TDATABASE       * db,
+                             int               id )
+{
+  TBINARY **help = &db->begin;
+  while( *help != NULL ) {
+    type idHelp = ( *help )->person->id;
+    
+    if( id == idHelp )
+      break;
+    else if( id < idHelp )
+      help = &(( *help )->left);
+    else
+      help = &(( *help )->right);
+  }
+  return help;
+}
 
 //
 //  main service functions
@@ -84,7 +99,7 @@ int       addPerson        ( TDATABASE       * db,
 
   TBINARY **ptr = &db->begin;
   while( *ptr != NULL ) {
-    type idHelp = (*ptr)->person->id;
+    type idHelp = ( *ptr )->person->id;
     if( id == idHelp )
       return 0;
     else if( id < idHelp )
