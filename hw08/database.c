@@ -144,6 +144,58 @@ void      UnsetFirstCommon ( TRECORD         * person )
   return ;
 }
 
+void      PrintResult      ( TRESULT         * list )
+{
+  printf( "\nSearch Results:\n%-20s %-10s %-10s %-20s\n", "pointer", "name", "id", "next" );
+  for( int i = 0; i < 100; i++ )
+    putchar( '-' );
+  putchar( '\n' );
+  
+  while( list != NULL ) {
+    printf( "%-20p %-10s %-10d %-20p\n", ( void* )list, list->m_Name, list->m_ID, ( void* )list->m_Next );
+    list = list->m_Next;
+  }
+  printf( "\n" );
+}
+
+void      PrintRecordRec   ( TBINARY         * item )
+{
+  if( item == NULL )
+    return;
+
+  printf( "%-20p %-10s %-10d %-10s | ", ( void* )item, item->person->name, item->person->id, ( item->person->usedCommon ? "true" : "false" ) );
+  if( item->person->p1 != NULL )
+    printf( "%-10d ", item->person->p1->id );
+  else
+    printf( "%-10s ", "NULL" );
+
+  if( item->person->p2 != NULL )
+    printf( "%-10d\n", item->person->p2->id );
+  else
+    printf( "%-10s\n", "NULL" );
+
+  PrintRecordRec( item->left );
+  PrintRecordRec( item->right );
+
+  return;
+}
+
+void      PrintRecord      ( TDATABASE       * db )
+{
+  printf( "\nAll records:\n%-20s %-10s %-10s %-10s | %-10s %-10s\n", "pointer", "name", "id", "used", "p_id1", "p_id2" );
+  for( int i = 0; i < 100; i++ )
+    putchar( '-' );
+  putchar( '\n' );
+
+  PrintRecordRec( db->begin );
+
+  for( int i = 0; i < 100; i++ )
+    putchar( '-' );
+
+  printf( "\nTotal records: %d\nOnly new records without reshuffle: %d\n\n", db->length, db->newRecords );
+  return;
+}
+
 //
 //  main database functions
 
