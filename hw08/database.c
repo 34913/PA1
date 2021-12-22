@@ -72,6 +72,45 @@ TBINARY **FindBinary       ( TDATABASE       * db,
   return help;
 }
 
+void      FindOne          ( TBINARY         * from,
+                             int               id,
+                             TRECORD        ** save )
+{
+  while( from != NULL ) {
+    if( id == from->person->id ) {
+      *save = from->person;
+      return;
+    }
+    else if( id < from->person->id )
+      from = from->left;
+    else
+      from = from->right;
+  }
+  return;
+}
+
+void      FindTwo           ( TBINARY        * from,
+                              int              id1,
+                              int              id2,
+                              TRECORD       ** save1,
+                              TRECORD       ** save2 )
+{
+  while( from != NULL ) {
+    int id = from->person->id;
+    
+    if( id1 < id && id2 < id )
+      from = from->left;
+    else if( id1 > id && id2 > id)
+      from = from->right;
+    else {
+      FindOne( from, id1, save1 );
+      FindOne( from, id2, save2 );
+      return;
+    }
+  }
+  return;
+}
+
 void      FreeBinary       ( TBINARY         * item )
 {
   if( item == NULL )
