@@ -270,19 +270,23 @@ int       addPerson        ( TDATABASE       * db,
   //
 
   TRECORD *p1 = NULL;
-  if( id1 != 0 ) {
-    TBINARY **help = FindBinary( db, id1 );
-    if( *help == NULL )
-      return 0;
-    p1 = ( *help )->person;
-  }
-
   TRECORD *p2 = NULL;
-  if( id2 != 0 ) {
-    TBINARY **help = FindBinary( db, id2 );
-    if( *help == NULL )
+  if( id1 != 0 && id2 != 0 ) {
+    FindTwo( db->begin, id1, id2, &p1, &p2 );
+    if( p1 == NULL || p2 == NULL )
       return 0;
-    p2 = ( *help )->person;
+  }
+  else {
+    if( id1 != 0 ) {
+      FindOne( db->begin, id1, &p1 );
+      if( p1 == NULL )
+        return 0;
+    }
+    if( id2 != 0 ) {
+      FindOne( db->begin, id2, &p2 );
+      if( p2 == NULL )
+        return 0;
+    }
   }
 
   TRECORD *person    = ( TRECORD* )malloc( sizeof( TRECORD ) );
@@ -332,8 +336,10 @@ TRESULT * commonAncestors  ( TDATABASE       * db,
                              int               id1,
                              int               id2 )
 {
-  TRECORD *firstRec = ( *FindBinary( db, id1 ) )->person;
-  TRECORD *secondRec = ( *FindBinary( db, id2 ) )->person;
+  TRECORD *firstRec  = NULL;
+  TRECORD *secondRec = NULL;
+  FindTwo( db->begin, id1, id2, &firstRec, &secondRec );
+
   if( firstRec == NULL || secondRec == NULL )
     return NULL;
 
