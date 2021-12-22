@@ -21,7 +21,7 @@ typedef struct TResult
 #define type int
 
 //
-//  additional structs
+//  additional structs to save and use
 
 typedef struct TRecord
 {
@@ -52,7 +52,8 @@ typedef struct TDatabase
 } TDATABASE;
 
 //
-//  additional functions
+//  additional service functions
+//  cause i dont know the "helping service functions" english word anymore
 
 TBINARY **FindBinary       ( TDATABASE       * db,
                              int               id )
@@ -108,8 +109,8 @@ void      FindFirstCommon  ( TRECORD         * person )
 
   person->usedCommon = true;
 
-  FindFirstRes( person->p1 );
-  FindFirstRes( person->p2 );
+  FindFirstCommon( person->p1 );
+  FindFirstCommon( person->p2 );
 
   return ;
 }
@@ -130,8 +131,21 @@ void      FindSecondCommon ( TRECORD         * person,
   return;
 }
 
+void      UnsetFirstCommon ( TRECORD         * person )
+{
+  if( person == NULL )
+    return;
+
+  person->usedCommon = false;
+
+  UnsetFirstCommon( person->p1 );
+  UnsetFirstCommon( person->p2 );
+
+  return ;
+}
+
 //
-//  main service functions
+//  main database functions
 
 void      initAll          ( TDATABASE       * db )
 {
@@ -227,7 +241,22 @@ TRESULT * commonAncestors  ( TDATABASE       * db,
                              int               id1,
                              int               id2 )
 {
-  /* todo */
+  TRECORD *firstRec = ( *FindBinary( db, id1 ) )->person;
+  TRECORD *secondRec = ( *FindBinary( db, id2 ) )->person;
+  if( firstRec == NULL || secondRec == NULL )
+    return NULL;
+
+  FindFirstCommon( firstRec->p1 );
+  FindFirstCommon( firstRec->p2 );
+
+  TRESULT *list = NULL;
+  FindSecondCommon( secondRec->p1, &list );
+  FindSecondCommon( secondRec->p2, &list );
+
+  UnsetFirstCommon( firstRec->p1 );
+  UnsetFirstCommon( firstRec->p2 );
+
+  return list;
 }
 
 void      freeResult       ( TRESULT         * res )
