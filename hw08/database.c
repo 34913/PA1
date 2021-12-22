@@ -30,6 +30,8 @@ typedef struct TRecord
 
   struct TRecord * p1;
   struct TRecord * p2;
+
+  bool             usedCommon;
 } TRECORD;
 
 typedef struct TBinary
@@ -99,6 +101,35 @@ void      AddResult        ( TRESULT        ** end,
   return;
 }
 
+void      FindFirstCommon  ( TRECORD         * person )
+{
+  if( person == NULL )
+    return;
+
+  person->usedCommon = true;
+
+  FindFirstRes( person->p1 );
+  FindFirstRes( person->p2 );
+
+  return ;
+}
+
+void      FindSecondCommon ( TRECORD         * person,
+                             TRESULT        ** end )
+{
+  if( person == NULL )
+    return;
+
+  if( person->usedCommon )
+    AddResult( end, person );
+  else {
+    FindSecondCommon( person->p1, end );
+    FindSecondCommon( person->p2, end );
+  }
+
+  return;
+}
+
 //
 //  main service functions
 
@@ -149,17 +180,18 @@ int       addPerson        ( TDATABASE       * db,
     p2 = ( *help )->person;
   }
 
-  TRECORD *person = ( TRECORD* )malloc( sizeof( TRECORD ) );
+  TRECORD *person    = ( TRECORD* )malloc( sizeof( TRECORD ) );
   if( person == NULL ) {
     return 0;
   }
-  person->id       = id;
-  person->name     = ( char* )malloc( sizeof( char ) * ( strlen( name ) + 1 ) );
+  person->id         = id;
+  person->p1         = p1;
+  person->p2         = p2;
+  person->usedCommon = false;
+  person->name       = ( char* )malloc( sizeof( char ) * ( strlen( name ) + 1 ) );
   if( person->name == NULL )
     return 0;
   strcpy( person->name, name );
-  person->p1       = p1;
-  person->p2       = p2;
 
   TBINARY *newItem = ( TBINARY* )malloc( sizeof( TBINARY ) );
   if( newItem == NULL ) {
@@ -180,7 +212,7 @@ int       addPerson        ( TDATABASE       * db,
 TRESULT * ancestors        ( TDATABASE       * db,
                              int               id )
 {
-  TRECORD *firstRec = (*FindBinary( db, id ))->person;
+  TRECORD *firstRec = ( *FindBinary( db, id ) )->person;
   if( firstRec == NULL )
     return NULL;
   TRESULT *list = NULL;
