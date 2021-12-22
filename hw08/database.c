@@ -200,7 +200,11 @@ TRESULT * commonAncestors  ( TDATABASE       * db,
 
 void      freeResult       ( TRESULT         * res )
 {
-  /* todo */
+  while( res != NULL ) {
+    TRESULT *help = res;
+    res = res->m_Next;
+    free( help );
+  }
 }
 
 //
