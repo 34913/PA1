@@ -75,8 +75,28 @@ void      FreeBinary       ( TBINARY         * item )
     return;
   FreeBinary( item->left );
   FreeBinary( item->right );
+  free( item->person->name );
   free( item->person );
   free( item );
+}
+
+void      AddResult        ( TRESULT        ** end,
+                             TRECORD         * person )
+{
+  if( person == NULL )
+    return;
+
+  TRESULT *newEnd = ( TRESULT* )malloc( sizeof( TRESULT ) );
+  newEnd->m_Next = *end;
+  newEnd->m_ID = person->id;
+  newEnd->m_Name = person->name;
+
+  *end = newEnd;
+
+  AddResult( end, person->p1 );
+  AddResult( end, person->p2 );
+
+  return;
 }
 
 //
@@ -134,6 +154,10 @@ int       addPerson        ( TDATABASE       * db,
     return 0;
   }
   person->id       = id;
+  person->name     = ( char* )malloc( sizeof( char ) * ( strlen( name ) + 1 ) );
+  if( person->name == NULL )
+    return 0;
+  strcpy( person->name, name );
   person->p1       = p1;
   person->p2       = p2;
 
@@ -156,7 +180,15 @@ int       addPerson        ( TDATABASE       * db,
 TRESULT * ancestors        ( TDATABASE       * db,
                              int               id )
 {
-  /* todo */
+  TRECORD *firstRec = (*FindBinary( db, id ))->person;
+  if( firstRec == NULL )
+    return NULL;
+  TRESULT *list = NULL;
+
+  AddResult( &list, firstRec->p1 );
+  AddResult( &list, firstRec->p2 );
+
+  return list;
 }
 
 TRESULT * commonAncestors  ( TDATABASE       * db,
@@ -197,10 +229,6 @@ int main                   ( int               argc,
   assert ( addPerson ( &a, 11, name, 6, 8 ) == 1 );
   strncpy ( name, "Maria", sizeof ( name ) );
   assert ( addPerson ( &a, 12, name, 5, 8 ) == 1 );
-
-
-  return 0;
-
   l = ancestors ( &a, 11 );
   assert ( l );
   assert ( l -> m_ID == 1 );
