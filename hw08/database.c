@@ -127,6 +127,9 @@ void      AddResult        ( TRESULT        ** end,
 {
   if( person == NULL )
     return;
+  if( !person->usedCommon )
+    return;
+  person->usedCommon = false;
 
   TRESULT *newEnd = ( TRESULT* )malloc( sizeof( TRESULT ) );
   newEnd->m_Next = *end;
@@ -144,6 +147,8 @@ void      AddResult        ( TRESULT        ** end,
 void      FindFirstCommon  ( TRECORD         * person )
 {
   if( person == NULL )
+    return;
+  if( person->usedCommon )
     return;
 
   person->usedCommon = true;
@@ -173,6 +178,8 @@ void      FindSecondCommon ( TRECORD         * person,
 void      UnsetFirstCommon ( TRECORD         * person )
 {
   if( person == NULL )
+    return;
+  if( !person->usedCommon )
     return;
 
   person->usedCommon = false;
@@ -321,10 +328,14 @@ int       addPerson        ( TDATABASE       * db,
 TRESULT * ancestors        ( TDATABASE       * db,
                              int               id )
 {
-  TRECORD *firstRec = ( *FindBinary( db, id ) )->person;
+  TRECORD *firstRec = NULL;
+  FindOne( db->begin, id, &firstRec );
   if( firstRec == NULL )
     return NULL;
   TRESULT *list = NULL;
+
+  FindFirstCommon( firstRec->p1 );
+  FindFirstCommon( firstRec->p2 );
 
   AddResult( &list, firstRec->p1 );
   AddResult( &list, firstRec->p2 );
@@ -393,43 +404,43 @@ int main                   ( int               argc,
   assert ( addPerson ( &a, 12, name, 5, 8 ) == 1 );
   l = ancestors ( &a, 11 );
   assert ( l );
-  assert ( l -> m_ID == 1 );
-  assert ( ! strcmp ( l -> m_Name, "John" ) );
+  assert ( l -> m_ID == 4 );
+  assert ( ! strcmp ( l -> m_Name, "Peter" ) );
   assert ( l -> m_Next );
-  assert ( l -> m_Next -> m_ID == 2 );
-  assert ( ! strcmp ( l -> m_Next -> m_Name, "Jane" ) );
+  assert ( l -> m_Next -> m_ID == 3 );
+  assert ( ! strcmp ( l -> m_Next -> m_Name, "Caroline" ) );
   assert ( l -> m_Next -> m_Next );
-  assert ( l -> m_Next -> m_Next -> m_ID == 3 );
-  assert ( ! strcmp ( l -> m_Next -> m_Next -> m_Name, "Caroline" ) );
+  assert ( l -> m_Next -> m_Next -> m_ID == 8 );
+  assert ( ! strcmp ( l -> m_Next -> m_Next -> m_Name, "Sandra" ) );
   assert ( l -> m_Next -> m_Next -> m_Next );
-  assert ( l -> m_Next -> m_Next -> m_Next -> m_ID == 4 );
-  assert ( ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Name, "Peter" ) );
+  assert ( l -> m_Next -> m_Next -> m_Next -> m_ID == 2 );
+  assert ( ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Name, "Jane" ) );
   assert ( l -> m_Next -> m_Next -> m_Next -> m_Next );
-  assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_ID == 6 );
-  assert ( ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "Martin" ) );
+  assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_ID == 1 );
+  assert ( ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "John" ) );
   assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next );
-  assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_ID == 8 );
-  assert ( ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "Sandra" ) );
+  assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_ID == 6 );
+  assert ( ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "Martin" ) );
   assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next == NULL );
   freeResult ( l );
   assert ( ancestors ( &a, 3 ) == NULL );
   assert ( ancestors ( &a, 13 ) == NULL );
   l = commonAncestors ( &a, 11, 12 );
   assert ( l );
-  assert ( l -> m_ID == 1 );
-  assert ( ! strcmp ( l -> m_Name, "John" ) );
+  assert ( l -> m_ID == 4 );
+  assert ( ! strcmp ( l -> m_Name, "Peter" ) );
   assert ( l -> m_Next );
-  assert ( l -> m_Next -> m_ID == 2 );
-  assert ( ! strcmp ( l -> m_Next -> m_Name, "Jane" ) );
+  assert ( l -> m_Next -> m_ID == 3 );
+  assert ( ! strcmp ( l -> m_Next -> m_Name, "Caroline" ) );
   assert ( l -> m_Next -> m_Next );
-  assert ( l -> m_Next -> m_Next -> m_ID == 3 );
-  assert ( ! strcmp ( l -> m_Next -> m_Next -> m_Name, "Caroline" ) );
+  assert ( l -> m_Next -> m_Next -> m_ID == 8 );
+  assert ( ! strcmp ( l -> m_Next -> m_Next -> m_Name, "Sandra" ) );
   assert ( l -> m_Next -> m_Next -> m_Next );
-  assert ( l -> m_Next -> m_Next -> m_Next -> m_ID == 4 );
-  assert ( ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Name, "Peter" ) );
+  assert ( l -> m_Next -> m_Next -> m_Next -> m_ID == 2 );
+  assert ( ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Name, "Jane" ) );
   assert ( l -> m_Next -> m_Next -> m_Next -> m_Next );
-  assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_ID == 8 );
-  assert ( ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "Sandra" ) );
+  assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_ID == 1 );
+  assert ( ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "John" ) );
   assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next == NULL );
   freeResult ( l );
   l = commonAncestors ( &a, 10, 9 );
@@ -448,29 +459,29 @@ int main                   ( int               argc,
   assert ( addPerson ( &a, 13, "Quido", 12, 11 ) == 1 );
   l = ancestors ( &a, 13 );
   assert ( l );
-  assert ( l -> m_ID == 1 );
-  assert ( ! strcmp ( l -> m_Name, "John" ) );
+  assert ( l -> m_ID == 6 );
+  assert ( ! strcmp ( l -> m_Name, "Martin" ) );
   assert ( l -> m_Next );
-  assert ( l -> m_Next -> m_ID == 2 );
-  assert ( ! strcmp ( l -> m_Next -> m_Name, "Jane" ) );
+  assert ( l -> m_Next -> m_ID == 11 );
+  assert ( ! strcmp ( l -> m_Next -> m_Name, "Phillipe" ) );
   assert ( l -> m_Next -> m_Next );
-  assert ( l -> m_Next -> m_Next -> m_ID == 3 );
-  assert ( ! strcmp ( l -> m_Next -> m_Next -> m_Name, "Caroline" ) );
+  assert ( l -> m_Next -> m_Next -> m_ID == 4 );
+  assert ( ! strcmp ( l -> m_Next -> m_Next -> m_Name, "Peter" ) );
   assert ( l -> m_Next -> m_Next -> m_Next );
-  assert ( l -> m_Next -> m_Next -> m_Next -> m_ID == 4 );
-  assert ( ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Name, "Peter" ) );
+  assert ( l -> m_Next -> m_Next -> m_Next -> m_ID == 3 );
+  assert ( ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Name, "Caroline" ) );
   assert ( l -> m_Next -> m_Next -> m_Next -> m_Next );
-  assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_ID == 5 );
-  assert ( ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "George" ) );
+  assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_ID == 8 );
+  assert ( ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "Sandra" ) );
   assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next );
-  assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_ID == 6 );
-  assert ( ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "Martin" ) );
+  assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_ID == 2 );
+  assert ( ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "Jane" ) );
   assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next );
-  assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_ID == 8 );
-  assert ( ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "Sandra" ) );
+  assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_ID == 1 );
+  assert ( ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "John" ) );
   assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next );
-  assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_ID == 11 );
-  assert ( ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "Phillipe" ) );
+  assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_ID == 5 );
+  assert ( ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "George" ) );
   assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next );
   assert ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_ID == 12 );
   assert ( ! strcmp ( l -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Next -> m_Name, "Maria" ) );
