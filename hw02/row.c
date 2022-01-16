@@ -75,13 +75,6 @@ int main(void)
 
             sum = arr[digits - 1].count * digits + arr[digits - 1].sum;
         }
-        
-        /*
-        printf("%ld %ld %ld\n", low, high, digits);
-        for(int i = 0; i < digits; i++)
-            printf("%ld %ld .. ", arr[i].count, arr[i].sum);
-        printf("\n\n");
-        */
 
         numberArr = (int *)malloc(sizeof(int) * digits);
         if(numberArr == NULL) {
@@ -91,36 +84,57 @@ int main(void)
         for(int i = 0; i < digits; i++)
             numberArr[i] = 0;
 
-        long inv = digits;
 
-        // position -= position % digits;
         // kdyby byl problem
         // zbytkove pozice, ktere se stejne jakoby zapocitaji na konci jako pozice toho daneho cisla
+        position -= arr[digits - 1].sum;
+        if(digits != 1) {
+            for(int i = 0; i < system - 1; i++){
 
-        //printf("%ld\n", position);
-        while(position >= digits && inv != 1) {
-            
-            if(arr[inv - 1].sum + 1 <= position && position <= arr[inv - 1].count * digits + arr[inv - 1].sum) {
-                for(int i = 0; i < system - 1; i++) {
-                    low = ((arr[inv - 1].count / (system - 1)) * i) * digits + arr[inv - 1].sum + 1;
-                    high = ((arr[inv - 1].count / (system - 1))  * (i + 1)) * digits + arr[inv - 1].sum;
-                    //printf("%ld - %ld\n", low, high);
-
-                    if(low <= position && position <= high) {
-                        numberArr[abs(inv - digits)] = i + 1;
-
-                        position -= low - 1;
-                        break;
-                    }
+                low = ((arr[digits - 1].count / (system - 1)) * i) * digits + 1;
+                high = ((arr[digits - 1].count / (system - 1))  * (i + 1)) * digits;
+                
+                if(low <= position && position <= high) {
+                    numberArr[0] = i + 1;
+                    position -= low;
+                    break;
                 }
             }
-            //printf("%ld %d\n", position, numberArr[abs(inv - digits)]);
+            long inv = digits - 1;
 
-            inv--;
+            if(position > digits && inv != 1) {
+
+                position -= 2;
+                while(position >= digits && inv != 1) {
+
+                    if(position <= arr[inv - 1].sum) {
+                        inv--;
+                        continue;
+                    }
+                    else
+                        position -= arr[inv - 2].count * digits;
+
+                    if(1 <= position && position <= arr[inv - 1].count * digits) {
+                        for(int i = 0; i < system - 1; i++) {
+                            low = ((arr[inv - 1].count / (system - 1)) * i) * digits + 1;
+                            high = ((arr[inv - 1].count / (system - 1))  * (i + 1)) * digits;
+
+                            if(low <= position && position <= high) {
+                                if(inv == digits - 1)
+                                    i++;
+                                numberArr[abs(inv - digits)] = i;
+                                position -= low;
+                                break;
+                            }
+                        }
+                    }
+                    inv--;
+                }
+            }
         }
-        if(position > digits) {
-            for(int i = 9; i >= 0; i--){
-                if(position - (i * digits) >= 0) {
+        if(position >= digits) {
+            for(int i = system - 1; i > 0; i--){
+                if(position >= i * digits) {
                     numberArr[digits - 1] = i;
                     position -= i * digits;
                     break;
@@ -131,7 +145,7 @@ int main(void)
         for(int i = 0; i < digits; i++)
             printf("%d", numberArr[i]);
         putc('\n', stdout);
-        for(int i = 0; i < position - 1; i++)
+        for(int i = 0; i < position; i++)
             putc(' ', stdout);
         printf("^\n");
 
