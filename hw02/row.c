@@ -105,11 +105,11 @@ int main(void)
             }
             long inv = digits - 1;
 
-            if(position > digits && inv != 1) {
-
+            if(position >= arr[1].sum * digits + 1 && inv != 1) {
+                
                 position -= 2;
-                while(position >= digits && inv != 1) {
-
+                while(position >= arr[1].sum + 1 && inv != 1) {
+                    
                     if(position <= arr[inv - 1].sum) {
                         inv--;
                         continue;
@@ -136,10 +136,10 @@ int main(void)
             }
         }
         if(position >= digits) {
-            for(int i = system - 1; i > 0; i--){
-                if(position >= i * digits) {
+            for(int i = 1; i < system; i++) {
+                if(i * digits <= position && position < (i + 1) * digits) {
                     numberArr[digits - 1] = i;
-                    position -= i * digits;
+                    position = position - i * digits;
                     break;
                 }
             }
