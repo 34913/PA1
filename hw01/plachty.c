@@ -23,7 +23,7 @@ bool NotInLimit(rectangle r);
 void ErrorMsg(errors e);
 //void Swap(rectangle *r);
 double Add(double side, double avaiable, double overlay);
-int Cycles(double wanted, double avaiable, double overlay);
+long Cycles(double wanted, double avaiable, double overlay);
 
 // main and functions body
 
@@ -48,19 +48,23 @@ int main(void)
             ErrorMsg(inputError);
     }
 
-    //int arr[2] = { Add(latka.heigth, latka.heigth, overlay), 
-    //               Add(latka.width, latka.width, overlay) };
-    //if(arr[0] <= 0 && latka.heigth != plachta.heigth )
+    long one = Cycles(plachta.width, latka.width, overlay);
+    if(one != -1)
+        one *= Cycles(plachta.heigth, latka.heigth, overlay);
 
-    int piecesOne = Cycles(plachta.width, latka.width, overlay) *
-                    Cycles(plachta.heigth, latka.heigth, overlay);
-    int piecesTwo = Cycles(plachta.width, latka.heigth, overlay) *
-                    Cycles(plachta.heigth, latka.width, overlay);
+    long two = Cycles(plachta.width, latka.heigth, overlay);
+    if(two != -1)
+        two *= Cycles(plachta.heigth, latka.width, overlay);
     
-    if(piecesOne == 0 && piecesTwo == 0)
+    if(one == -1 && two == -1)
         ErrorMsg(cantError);
+    else if(one == -1)
+        printf("Pocet kusu latky: %ld\n", two);
+    else if(two == -1)
+        printf("Pocet kusu latky: %ld\n", one);
     else
-        printf("Pocet kusu latky: %d\n", piecesTwo == 0 || (piecesOne <= piecesTwo && piecesOne != 0) ? piecesOne : piecesTwo);
+        printf("Pocet kusu latky: %ld\n", one <= two ? one : two);
+
     return EXIT_SUCCESS;
 }
 
@@ -105,7 +109,7 @@ double Add(double side, double avaiable, double overlay)
 }
 
 // returns the count of used available size to fill the wanted size
-int Cycles(double wanted, double avaiable, double overlay)
+long Cycles(double wanted, double avaiable, double overlay)
 {
     int count = 0;
     double size = 0;
@@ -115,7 +119,7 @@ int Cycles(double wanted, double avaiable, double overlay)
         size = Add(size, avaiable, overlay);
         
         if(size <= 0)
-            return 0;
+            return -1;
     }
     return count;
 }
