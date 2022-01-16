@@ -3,6 +3,8 @@
 #include <stdio.h>      // standard I/O
 #include <stdbool.h>    // boolean values
 #include <stdlib.h>     // malloc, exit
+#include <math.h>
+#include <float.h>
 
 // global variables
 
@@ -33,20 +35,18 @@ int main(void)
     rectangle latka, plachta;
 
     printf("Velikost latky:\n");
-    if(CheckInput(scanf("%lf", &latka.width), 1) 
-        || CheckInput(scanf("%lf", &latka.heigth), 1)
+    if(CheckInput(scanf(" %lf %lf", &latka.width, &latka.heigth), 2) 
         || NotInLimit(latka))
         ErrorMsg(inputError);
 
     printf("Velikost plachty:\n");
-    if(CheckInput(scanf("%lf", &plachta.width), 1)
-        || CheckInput(scanf("%lf", &plachta.heigth), 1)
+    if(CheckInput(scanf(" %lf %lf", &plachta.width, &plachta.heigth), 2)
         || NotInLimit(plachta))
         ErrorMsg(inputError);
 
     if(plachta.width > latka.width || plachta.heigth > latka.heigth){
         printf("Prekryv:\n");
-        if(CheckInput(scanf("%lf", &overlay), 1) || overlay < 0)
+        if(CheckInput(scanf(" %lf", &overlay), 1) || overlay < 0)
             ErrorMsg(inputError);
     }
 
@@ -115,11 +115,17 @@ long Cycles(double wanted, double avaiable, double overlay)
 {
     int count = 0;
     double size = 0;
+    double odchylka = 1024 * DBL_EPSILON;
+    
+    while( wanted - size > odchylka * (wanted + size) ) {
+    //while( wanted > size ) {
+        //printf("%.20lf %.20lf\n", odchylka, wanted - size);
 
-    while(wanted > size) {
         count++;
         size = Add(size, avaiable, overlay);
-        
+
+        //printf("%d\n", count);
+
         if(size <= 0)
             return -1;
     }
