@@ -33,12 +33,14 @@ int main(void)
     rectangle latka, plachta;
 
     printf("Velikost latky:\n");
-    if(CheckInput(scanf("%lf %lf", &latka.width, &latka.heigth), 2)
+    if(CheckInput(scanf("%lf", &latka.width), 1) 
+        || CheckInput(scanf("%lf", &latka.heigth), 1)
         || NotInLimit(latka))
         ErrorMsg(inputError);
 
     printf("Velikost plachty:\n");
-    if(CheckInput(scanf("%lf %lf", &plachta.width, &plachta.heigth), 2) 
+    if(CheckInput(scanf("%lf", &plachta.width), 1)
+        || CheckInput(scanf("%lf", &plachta.heigth), 1)
         || NotInLimit(plachta))
         ErrorMsg(inputError);
 
