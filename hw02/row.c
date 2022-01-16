@@ -48,6 +48,9 @@ int main(void)
             printf("0\n^\n");
             continue;
         }
+        else if(position < 0) {
+            break;
+        }
 
         long high = system;
         long low = 1;
