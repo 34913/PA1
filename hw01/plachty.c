@@ -18,12 +18,14 @@ typedef struct {
     double width;
 } rectangle;
 
+double deviation = 1024 * DBL_EPSILON;
+
 // prototyping
 
 bool CheckInput(int returnValue, int neededInput);
 bool NotInLimit(rectangle r);
 void ErrorMsg(errors e);
-//void Swap(rectangle *r);
+char ReturnCompare(double one, double two);
 double Add(double side, double avaiable, double overlay);
 long Cycles(double wanted, double avaiable, double overlay);
 
@@ -44,7 +46,12 @@ int main(void)
         || NotInLimit(plachta))
         ErrorMsg(inputError);
 
-    if(plachta.width > latka.width || plachta.heigth > latka.heigth){
+    if((latka.heigth >= plachta.heigth && latka.width >= plachta.width)
+        || (latka.heigth >= plachta.width && latka.width >= plachta.heigth)) {
+        printf("Pocet kusu latky: 1\n");
+        return 0;
+    }
+    else {
         printf("Prekryv:\n");
         if(CheckInput(scanf(" %lf", &overlay), 1) || overlay < 0)
             ErrorMsg(inputError);
@@ -65,7 +72,7 @@ int main(void)
     else if(two == -1)
         printf("Pocet kusu latky: %ld\n", one);
     else
-        printf("Pocet kusu latky: %ld\n", one <= two ? one : two);
+        printf("Pocet kusu latky: %ld\n", one - two <= deviation * (one + two) ? one : two);
 
     return EXIT_SUCCESS;
 }
@@ -92,15 +99,15 @@ void ErrorMsg(errors e)
     exit(EXIT_FAILURE);
 }
 
-/*
-// swaps the values in two sides
-void Swap(rectangle *r)
+// returns compare character, based on which number is bigger, = < >
+char ReturnCompare(double one, double two)
 {
-    int height = r->heigth;
-    r->heigth = r->width;
-    r->width = height;
+    if(fabs(one - two) < deviation * (one + two))
+        return '=';
+    else if(one - two > deviation * (one + two))
+        return '>';
+    return '<';
 }
-*/
 
 // returns value of side added with available and subtracted overlay
 double Add(double side, double avaiable, double overlay)
@@ -115,16 +122,10 @@ long Cycles(double wanted, double avaiable, double overlay)
 {
     int count = 0;
     double size = 0;
-    double odchylka = 1024 * DBL_EPSILON;
     
-    while( wanted - size > odchylka * (wanted + size) ) {
-    //while( wanted > size ) {
-        //printf("%.20lf %.20lf\n", odchylka, wanted - size);
-
+    while( ReturnCompare( wanted, size ) == '>' ) {
         count++;
         size = Add(size, avaiable, overlay);
-
-        //printf("%d\n", count);
 
         if(size <= 0)
             return -1;
