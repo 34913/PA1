@@ -61,7 +61,6 @@ int main(void)
         ErrorMsg(cantError);
     else
         printf("Pocet kusu latky: %d\n", piecesTwo == 0 || (piecesOne <= piecesTwo && piecesOne != 0) ? piecesOne : piecesTwo);
-    printf("%d %d\n", piecesOne, piecesTwo);
     return EXIT_SUCCESS;
 }
 
