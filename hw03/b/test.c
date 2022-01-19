@@ -5,7 +5,6 @@
 #include <stdbool.h>
 #endif /* __PROGTEST__ */
 
-
 // decides if year is leap
 bool IsLeap( int year ) {
   if( year % 4000 == 0)
@@ -274,7 +273,6 @@ int main ( int argc, char * argv [] )
   assert ( energyConsumption ( 2400,  2, 29, 12,  0,
                                2400,  2, 29, 12,  0, &consumption ) == 1
            && consumption == 0LL );
-
   return 0;
 }
 #endif /* __PROGTEST__ */
